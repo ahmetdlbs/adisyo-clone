@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Quicksand } from "next/font/google";
 import "material-icons/iconfont/material-icons.css";
 import "./globals.css";
+import { PosProvider } from "@/context/PosContext";
+import { ShellProvider } from "@/components/shell/ShellContext";
 
 const quicksand = Quicksand({
   subsets: ["latin", "latin-ext"],
@@ -29,7 +31,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className={quicksand.variable}>
-      <body className="min-h-screen overflow-x-hidden antialiased">{children}</body>
+      <body className="min-h-screen overflow-x-hidden antialiased">
+        <PosProvider>
+          <ShellProvider>
+            {children}
+          </ShellProvider>
+        </PosProvider>
+      </body>
     </html>
   );
 }

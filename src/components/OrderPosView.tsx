@@ -109,8 +109,8 @@ export default function OrderPosView({
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Header of POS (Matching table_layout_screen_pos_1789837221695.png) */}
-        <div className="h-14 px-6 flex items-center justify-between shrink-0">
+        {/* Zone / Orders Switcher */}
+        <div className="pt-4 px-6 flex items-center shrink-0">
           {/* Left: [ Bölgeler ] / [ Siparişler ] Switcher */}
           <div className="flex items-center bg-[#e4e8ef] p-1 rounded-[6px]">
             <button
@@ -138,32 +138,6 @@ export default function OrderPosView({
               <Kanban className="w-4 h-4" />
               <span>Siparişler</span>
             </button>
-          </div>
-
-          {/* Right: Duyurular, Destek İste, User Profile */}
-          <div className="flex items-center gap-6 text-xs text-[#374151] font-medium">
-            <button
-              type="button"
-              onClick={() => alert("Duyurular")}
-              className="flex items-center gap-1.5 hover:text-black cursor-pointer"
-            >
-              <Megaphone className="w-4 h-4 text-[#4b5563]" />
-              <span>Duyurular</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => alert("Destek İste")}
-              className="flex items-center gap-1.5 hover:text-black cursor-pointer"
-            >
-              <Headphones className="w-4 h-4 text-[#4b5563]" />
-              <span>Destek İste</span>
-            </button>
-
-            <div className="flex items-center gap-1.5">
-              <User className="w-4 h-4 text-[#4b5563]" />
-              <span>84425-Ahmet</span>
-            </div>
           </div>
         </div>
 

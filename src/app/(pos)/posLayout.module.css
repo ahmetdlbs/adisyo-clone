@@ -1,0 +1,83 @@
+.posContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #e9eaef;
+  overflow: hidden;
+}
+
+.posHeader {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 16px;
+  background-color: #e9eaef;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.headerAction {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.posBody {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.posSidebar {
+  width: 80px;
+  background-color: #e9eaef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+  border-right: 1px solid var(--divider-color);
+}
+
+.sidebarBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background-color: transparent;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  gap: 4px;
+}
+
+.sidebarBtn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.sidebarBtn .material-icons {
+  font-size: 24px;
+}
+
+.posMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #e9eaef;
+  padding: 16px;
+}
