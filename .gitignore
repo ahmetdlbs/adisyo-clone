@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# proprietary Euclid font files, kept local for visual parity only (not redistributed)
+/public/fonts/
+
 # vercel
 .vercel
 

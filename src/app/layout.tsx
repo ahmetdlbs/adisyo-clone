@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Quicksand } from "next/font/google";
+import "material-icons/iconfont/material-icons.css";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -9,11 +10,16 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "Adisyo - Bulut Tabanlı Restoran POS Sistemi",
-  description: "Restoran, kafe, bar ve paket servis işletmeleri için bulut tabanlı yeni nesil adisyon ve POS yönetim sistemi.",
+  title: "Adisyo",
+  robots: { index: false, follow: false },
+  other: { google: "notranslate" },
   icons: {
     icon: "/favicon.ico",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#c92c2c",
 };
 
 export default function RootLayout({
@@ -23,9 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className={quicksand.variable}>
-      <body className="font-sans antialiased bg-[#f8f9fa] text-[#2b2f36] min-h-screen overflow-x-hidden selection:bg-[#c92c2c] selection:text-white">
-        {children}
-      </body>
+      <body className="min-h-screen overflow-x-hidden antialiased">{children}</body>
     </html>
   );
 }

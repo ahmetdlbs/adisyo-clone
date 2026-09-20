@@ -1,0 +1,155 @@
+/* Swiper-generated DOM (slides, pagination) and gradient layers that utilities express poorly. */
+
+/* Breakpoints use `max-width` (inclusive) like the original; Tailwind's max-* variants are exclusive. */
+.testimonial-panel {
+  position: relative;
+  isolation: isolate;
+  flex: none;
+  width: 700px;
+  height: 100%;
+  overflow: hidden;
+  transition: width 0.15s linear;
+}
+
+@media (max-width: 1200px) {
+  .testimonial-panel {
+    width: 550px;
+  }
+}
+
+@media (max-width: 990px) {
+  .testimonial-panel {
+    width: 450px;
+  }
+}
+
+@media (max-width: 845px) {
+  .testimonial-panel {
+    display: none;
+  }
+}
+
+.testimonial-swiper {
+  --swiper-pagination-bottom: 60px;
+  --swiper-pagination-bullet-horizontal-gap: 5px;
+}
+
+.testimonial-swiper .swiper-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+  font-size: 18px;
+  line-height: 25.7143px;
+}
+
+.testimonial-swiper .swiper-pagination-bullet {
+  width: 11px;
+  height: 11px;
+  opacity: 1;
+  background: #ffffff59;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  box-sizing: border-box;
+}
+
+.testimonial-swiper .swiper-pagination-bullet-active {
+  background: #fff;
+  border-color: #fff;
+}
+
+.testimonial-bg,
+.testimonial-overlay {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 100%;
+  height: calc(100% + 8px);
+}
+
+.testimonial-bg {
+  object-fit: cover;
+}
+
+.testimonial-bg--sharp {
+  z-index: 0;
+}
+
+.testimonial-bg--soft {
+  z-index: 1;
+  filter: blur(4px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 46%,
+    rgba(0, 0, 0, 0.6) 56%,
+    rgba(0, 0, 0, 0.28) 66%,
+    rgba(0, 0, 0, 0.08) 72%,
+    transparent 78%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 46%,
+    rgba(0, 0, 0, 0.6) 56%,
+    rgba(0, 0, 0, 0.28) 66%,
+    rgba(0, 0, 0, 0.08) 72%,
+    transparent 78%
+  );
+}
+
+.testimonial-overlay {
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0.56) 24%,
+    rgba(0, 0, 0, 0.52) 38%,
+    rgba(0, 0, 0, 0.48) 48%,
+    rgba(0, 0, 0, 0.46) 56%,
+    rgba(0, 0, 0, 0.44) 62%,
+    rgba(0, 0, 0, 0.42) 68%,
+    rgba(0, 0, 0, 0.3) 76%,
+    rgba(0, 0, 0, 0.15) 84%,
+    rgba(0, 0, 0, 0.06) 91%,
+    rgba(0, 0, 0, 0.025) 96%,
+    transparent 100%
+  );
+}
+
+.testimonial-comment {
+  position: relative;
+  z-index: 3;
+  max-width: 600px;
+  padding: 0 20px;
+  color: #fff;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.testimonial-customer {
+  --logo-offset: 27%;
+  --line-left-offset: 70px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding-left: var(--logo-offset);
+}
+
+.testimonial-customer::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(-1 * var(--line-left-offset));
+  width: calc(var(--logo-offset) + var(--line-left-offset) - 14px);
+  height: 2px;
+  background-color: #fff;
+  transform: translateY(-50%);
+}

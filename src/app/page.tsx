@@ -26,7 +26,7 @@ import {
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userEmail, setUserEmail] = useState<string>("softdeap@gmail.com");
+  const [userEmail, setUserEmail] = useState<string>("");
 
   const [currentView, setCurrentView] = useState<ViewType>("order");
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);

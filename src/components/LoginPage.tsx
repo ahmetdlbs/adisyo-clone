@@ -1,178 +1,151 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { Eye, EyeOff, Headphones } from "lucide-react";
-import AdisyoLogo from "./AdisyoLogo";
+import { useCallback, useState, type SubmitEvent } from "react";
+import AuthTemplate from "@/components/auth/AuthTemplate";
+import MaterialIcon from "@/components/ui/MaterialIcon";
+import SnackBar from "@/components/ui/SnackBar";
+
+const LOGIN_ERROR_MESSAGE = "Kullanıcı adı veya şifre hatalı.";
+const USERNAME_REQUIRED_MESSAGE = "*Boş geçilemez";
+const PASSWORD_REQUIRED_MESSAGE = "*Lütfen şifrenizi giriniz";
+
+const INPUT_CLASS =
+  "mb-[14px] block w-full rounded-[8px] border border-grey-3 bg-white px-4 py-[18px] text-left text-[14px] text-ink outline-none transition-all duration-300 ease-[ease] placeholder:text-grey-2 focus:shadow-[inset_0_-3px_0_0_#f1c40f]";
+const ERROR_CLASS =
+  "-mt-2 mb-[14px] ml-5 text-[12px] leading-[17.1429px] text-fire-red-1";
 
 interface LoginPageProps {
   onLoginSuccess: (userEmail: string) => void;
 }
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
-  const [email, setEmail] = useState("softdeap@gmail.com");
-  const [password, setPassword] = useState("Depsoft@12345");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onLoginSuccess(email);
-    }, 400);
+  const closeSnackBar = useCallback(() => setErrorMessage(null), []);
+
+  const showUsernameError = hasSubmitted && username === "";
+  const showPasswordError = hasSubmitted && password === "";
+
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setHasSubmitted(true);
+    if (username === "" || password === "" || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!response.ok) {
+        setErrorMessage(LOGIN_ERROR_MESSAGE);
+        return;
+      }
+      onLoginSuccess(username);
+    } catch (error) {
+      console.error("[LoginPage] login request failed", error);
+      setErrorMessage(LOGIN_ERROR_MESSAGE);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="flex h-screen w-screen bg-[#f8f9fa] overflow-hidden select-none">
-      {/* Left Column: Authentic Hero Testimonial Panel (~26% width) */}
-      <div className="hidden lg:flex lg:w-[26%] xl:w-[25%] relative flex-col justify-end p-8 xl:p-10 text-white overflow-hidden shrink-0">
-        {/* Wood-fired oven hero image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/login-hero.jpg"
-            alt="Adisyo Restoran"
-            fill
-            className="object-cover"
-            priority
-          />
-          {/* Authentic vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-        </div>
-
-        {/* Quote Content */}
-        <div className="relative z-10 space-y-4">
-          <div className="text-6xl font-serif text-white/95 leading-none select-none">
-            “
-          </div>
-
-          <p className="text-[13px] xl:text-[14px] leading-relaxed font-normal text-white/95">
-            Çok şubeli yapımızda en önemli konu, tüm operasyonu merkezden sağlıklı ve anlık şekilde yönetebilmek.
-            Adisyo sayesinde şubelerimizin verilerine tek panel üzerinden anında ulaşabiliyoruz.
-            Raporlamalarımız artık net, şeffaf ve karşılaştırılabilir. Karar alma süreçlerimiz hızlandı, operasyonel kontrolümüz güçlendi.
-          </p>
-
-          <div className="pt-4 border-t border-white/30">
-            <div className="flex items-center gap-3">
-              {/* Pasaport Pizza Circular Badge */}
-              <div className="w-10 h-10 rounded-full bg-[#c02328] border-2 border-white/90 flex items-center justify-center p-1 shadow-md shrink-0">
-                <span className="text-[9px] font-black text-yellow-300 text-center leading-tight uppercase">
-                  Pasaport<br />Pizza
-                </span>
-              </div>
-              <span className="text-sm font-semibold text-white">
-                Pasaport Pizza
-              </span>
-            </div>
-
-            {/* Pagination Dash indicators */}
-            <div className="flex items-center gap-2 mt-4">
-              <div className="w-8 h-1 rounded-full bg-white" />
-              <div className="w-2 h-1 rounded-full bg-white/40" />
-              <div className="w-2 h-1 rounded-full bg-white/40" />
-            </div>
-          </div>
-        </div>
+    <AuthTemplate>
+      <div className="mb-[25px]">
+        <h2 className="m-0 text-[21px] leading-[30px] text-ink">
+          Adisyo&apos;ya hoş geldiniz
+        </h2>
+        <p className="mt-[10px] text-grey-2">
+          Lütfen üyelik bilgileriniz ile giriş yapınız
+        </p>
       </div>
 
-      {/* Right Column: Exact Adisyo Login Screen (~74% width) */}
-      <div className="flex-1 flex flex-col justify-between p-6 md:p-10 bg-[#f8f9fa] overflow-y-auto">
-        {/* Top Header */}
-        <div className="flex items-center justify-between w-full">
-          <AdisyoLogo size="lg" />
+      <form noValidate onSubmit={handleSubmit}>
+        <input
+          type="text"
+          data-test-id="login-username-input"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          required
+          placeholder="E-Posta Adresi veya Telefon Numarası"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          className={INPUT_CLASS}
+        />
+        {showUsernameError && (
+          <p data-test-id="login-username-error" className={ERROR_CLASS}>
+            {USERNAME_REQUIRED_MESSAGE}
+          </p>
+        )}
 
-          {/* Destek İste Capsule Button */}
+        <div className="relative">
+          <input
+            type={isPasswordVisible ? "text" : "password"}
+            data-test-id="login-password-input"
+            autoComplete="current-password"
+            required
+            placeholder="Şifre"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={`${INPUT_CLASS} pr-[35px]`}
+          />
           <button
             type="button"
-            className="flex items-center gap-2 px-4 py-1.5 text-xs font-medium text-[#4b5563] bg-white border border-[#d1d5db] rounded-full hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer"
+            data-test-id="login-password-toggle"
+            tabIndex={-1}
+            aria-label={isPasswordVisible ? "Şifreyi gizle" : "Şifreyi göster"}
+            onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+            className="absolute top-1/2 right-[5px] flex -translate-y-1/2 cursor-pointer select-none p-[5px] text-left text-grey-2 opacity-80"
           >
-            <Headphones className="w-3.5 h-3.5 text-[#4b5563]" />
-            <span>Destek İste</span>
+            <MaterialIcon name={isPasswordVisible ? "visibility_off" : "visibility"} />
+          </button>
+        </div>
+        {showPasswordError && (
+          <p data-test-id="login-password-error" className={ERROR_CLASS}>
+            {PASSWORD_REQUIRED_MESSAGE}
+          </p>
+        )}
+
+        <div className="mt-[15px] flex items-center justify-end">
+          <button
+            type="button"
+            data-test-id="login-forgot-password-link"
+            className="block cursor-pointer text-left text-grey-1 capitalize hover:text-fire-red-1"
+          >
+            Şifremi unuttum
           </button>
         </div>
 
-        {/* Centered Login Card */}
-        <div className="w-full max-w-[400px] mx-auto my-auto">
-          <div className="mb-6">
-            <h1 className="text-[22px] md:text-[24px] font-semibold text-[#262626]">
-              Adisyo&apos;ya hoş geldiniz
-            </h1>
-            <p className="text-[13px] text-[#757575] mt-1.5">
-              Lütfen üyelik bilgileriniz ile giriş yapınız
-            </p>
-          </div>
+        <button
+          type="submit"
+          data-test-id="login-submit-button"
+          aria-busy={isSubmitting}
+          className={`mt-[15px] inline-block w-full cursor-pointer rounded-[10px] bg-fire-red-1 px-[22px] py-[15px] text-center text-[16px] leading-[1.42857143] font-bold text-white transition-all duration-200 ease-[ease] hover:bg-[#cf5a55] ${
+            isSubmitting ? "opacity-50" : ""
+          }`}
+        >
+          Giriş Yap
+        </button>
+      </form>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Input 1: E-Posta / Telefon */}
-            <div>
-              <input
-                id="login-email"
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="E-Posta Adresi veya Telefon Numarası"
-                className="w-full h-12 px-3.5 text-[14px] text-[#262626] placeholder-[#8e8e8e] bg-white border border-[#d9d9d9] rounded-[4px] outline-none focus:border-[#b84a43] focus:ring-1 focus:ring-[#b84a43] transition-all"
-                required
-              />
-            </div>
+      <button
+        type="button"
+        className="mt-[30px] inline-block h-[35px] w-full cursor-pointer rounded-[10px] px-[15px] py-px text-center leading-8 text-grey-1 [transition:box-shadow_.2s_cubic-bezier(.4,0,1,1),background-color_.2s_cubic-bezier(.4,0,.2,1)] hover:bg-black/5"
+      >
+        <span>
+          Üye Değil Misiniz? <b className="font-bold text-fire-red-1">Şimdi Kaydolun</b>
+        </span>
+      </button>
 
-            {/* Input 2: Şifre */}
-            <div>
-              <div className="relative flex items-center">
-                <input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Şifre"
-                  className="w-full h-12 px-3.5 pr-10 text-[14px] text-[#262626] placeholder-[#8e8e8e] bg-white border border-[#d9d9d9] rounded-[4px] outline-none focus:border-[#b84a43] focus:ring-1 focus:ring-[#b84a43] transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-[#757575] hover:text-[#262626] cursor-pointer"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {/* Şifremi Unuttum */}
-              <div className="flex justify-end mt-2">
-                <span className="text-[13px] text-[#757575] hover:text-[#262626] cursor-pointer">
-                  Şifremi Unuttum
-                </span>
-              </div>
-            </div>
-
-            {/* Giriş Yap Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 bg-[#b84a43] hover:bg-[#a53f38] active:bg-[#923630] text-white font-medium text-[15px] rounded-[4px] shadow-2xs transition-colors flex items-center justify-center cursor-pointer mt-3"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                "Giriş Yap"
-              )}
-            </button>
-          </form>
-
-          {/* Footer: Şimdi Kaydolun */}
-          <div className="text-center mt-6 text-[13px] text-[#757575]">
-            Üye Değil Misiniz?{" "}
-            <span className="font-semibold text-[#b84a43] hover:underline cursor-pointer">
-              Şimdi Kaydolun
-            </span>
-          </div>
-        </div>
-
-        {/* Bottom empty spacer to match Adisyo layout */}
-        <div className="h-4" />
-      </div>
-    </div>
+      <SnackBar message={errorMessage} onClose={closeSnackBar} />
+    </AuthTemplate>
   );
 }
