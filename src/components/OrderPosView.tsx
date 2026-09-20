@@ -30,6 +30,10 @@ interface OrderPosViewProps {
   onQuickGelAl: () => void;
   onQuickPaket: () => void;
   onLogout: () => void;
+  onPrintKanbanOrder?: (order: KanbanOrder) => void;
+  onPayKanbanOrder?: (order: KanbanOrder) => void;
+  onCancelKanbanOrder?: (order: KanbanOrder) => void;
+  onMarkReadyKanbanOrder?: (order: KanbanOrder) => void;
 }
 
 export default function OrderPosView({
@@ -42,6 +46,10 @@ export default function OrderPosView({
   onQuickGelAl,
   onQuickPaket,
   onLogout,
+  onPrintKanbanOrder,
+  onPayKanbanOrder,
+  onCancelKanbanOrder,
+  onMarkReadyKanbanOrder,
 }: OrderPosViewProps) {
   const [subView, setSubView] = useState<"bolgeler" | "siparisler">("bolgeler");
   const [selectedSection, setSelectedSection] = useState<"salon" | "bolge2">("salon");
@@ -58,19 +66,7 @@ export default function OrderPosView({
     <div className="flex-1 flex h-screen w-screen overflow-hidden select-none bg-[#edf0f5]">
       {/* Left Action Toolbar Rail */}
       <div className="w-[72px] bg-white border-r border-[#e2e6eb] flex flex-col items-center py-4 justify-between shrink-0 z-20">
-        {/* Top: Menü Button */}
-        <div className="flex flex-col items-center">
-          <button
-            type="button"
-            onClick={onOpenDrawer}
-            className="flex flex-col items-center justify-center text-[#2b2f36] hover:text-[#b84a43] p-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-          >
-            <Menu className="w-6 h-6 stroke-[2]" />
-            <span className="text-[11px] font-medium mt-1">Menü</span>
-          </button>
-        </div>
-
-        {/* Middle: Gel Al & Paket Cards */}
+        {/* Gel Al & Paket Cards */}
         <div className="space-y-4 flex flex-col items-center w-full px-2">
           {/* Gel Al */}
           <button
@@ -248,12 +244,12 @@ export default function OrderPosView({
                         {/* Top: Table name, customer and 3-dots */}
                         <div className="flex items-start justify-between">
                           <div>
-                            <span className="font-bold text-sm text-[#2b2f36] block">
+                            <div className="text-base font-bold text-black group-hover:text-black">
                               {table.name}
-                            </span>
-                            <span className="text-xs text-[#5c5f66] font-medium block">
+                            </div>
+                            <div className="text-xs font-semibold text-[#8b3f3a] mt-0.5">
                               {table.customerName || "Ahmet Can"}
-                            </span>
+                            </div>
                           </div>
 
                           <button
@@ -305,6 +301,10 @@ export default function OrderPosView({
           <OrdersKanbanView
             orders={kanbanOrders}
             onSelectOrder={onSelectKanbanOrder}
+            onPrintOrder={onPrintKanbanOrder}
+            onPayOrder={onPayKanbanOrder}
+            onCancelOrder={onCancelKanbanOrder}
+            onMarkReady={onMarkReadyKanbanOrder}
           />
         )}
       </div>

@@ -34,156 +34,130 @@ export default function DashboardView({
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 max-w-7xl mx-auto w-full select-none">
       {/* Section 1: GENEL DURUM */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#6b7280] mb-3">
+      <div className="mb-12">
+        <h3 className="text-[13px] font-bold uppercase tracking-wider text-[#6b7280] mb-8">
           GENEL DURUM
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Toplam Satış Tutarı (Orange) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#f97316] text-white flex items-center justify-center shrink-0">
-              <Layers className="w-6 h-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 gap-y-12">
+          {/* Card 1: Toplam Satış Tutarı */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-orange-500 to-orange-400 text-white flex items-center justify-center shadow-lg">
+              <Layers className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Bugünkü toplam satış tutarı
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺0,00
-              </div>
-              <div className="text-[11px] text-[#9ca3af] mt-1">
-                Gün sonu raporu
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Bugünkü toplam satış tutarı</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺0,00</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-[#9ca3af]">Gün sonu raporu</span>
             </div>
           </div>
 
-          {/* Card 2: Misafir Sayısı (Blue) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#0284c7] text-white flex items-center justify-center shrink-0">
-              <Users className="w-6 h-6" />
+          {/* Card 2: Misafir Sayısı */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-sky-500 to-sky-400 text-white flex items-center justify-center shadow-lg">
+              <Users className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Bugün ağırlanan misafir sayısı
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                {guestCount}
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Bugün ağırlanan misafir sayısı</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">{guestCount}</div>
             </div>
-          </div>
-
-          {/* Card 3: Açık Sipariş Toplamı (Green) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#16a34a] text-white flex items-center justify-center shrink-0">
-              <BarChart3 className="w-6 h-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Bugün açık sipariş toplamı
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺{openOrdersTotal.toFixed(2).replace(".", ",")}
-              </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-transparent select-none">-</span>
             </div>
           </div>
 
-          {/* Card 4: Toplam Gider Tutarı (Pink) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#db2777] text-white flex items-center justify-center shrink-0">
-              <ArrowUpDown className="w-6 h-6" />
+          {/* Card 3: Açık Sipariş Toplamı */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-green-500 to-green-400 text-white flex items-center justify-center shadow-lg">
+              <BarChart3 className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Bugünkü toplam gider tutarı
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺0,00
-              </div>
-              <div className="text-[11px] text-[#9ca3af] mt-1">
-                Masraflar
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Bugün açık sipariş toplamı</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺{openOrdersTotal.toFixed(2).replace(".", ",")}</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-transparent select-none">-</span>
+            </div>
+          </div>
+
+          {/* Card 4: Toplam Gider Tutarı */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-rose-500 to-rose-400 text-white flex items-center justify-center shadow-lg">
+              <ArrowUpDown className="w-8 h-8" />
+            </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Bugünkü toplam gider tutarı</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺0,00</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-[#9ca3af]">Masraflar</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Section 2: FİNANSAL ANALİZ & KÂRLILIK */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#6b7280] mb-3">
+      <div className="mb-12">
+        <h3 className="text-[13px] font-bold uppercase tracking-wider text-[#6b7280] mb-8">
           FİNANSAL ANALİZ & KÂRLILIK
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Toplam Stok Maliyeti (Purple) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#9333ea] text-white flex items-center justify-center shrink-0">
-              <LayoutGrid className="w-6 h-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 gap-y-12">
+          {/* Card 1: Toplam Stok Maliyeti */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-purple-500 to-purple-400 text-white flex items-center justify-center shadow-lg">
+              <LayoutGrid className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Toplam Stok Maliyeti
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺0,00
-              </div>
-              <div className="text-[11px] text-[#9ca3af] mt-1">
-                Depodaki Ürün Maliyeti
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Toplam Stok Maliyeti</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺0,00</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-[#9ca3af]">Depodaki Ürün Maliyeti</span>
             </div>
           </div>
 
-          {/* Card 2: Satılan Ürün Maliyeti (Indigo) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#4f46e5] text-white flex items-center justify-center shrink-0">
-              <Receipt className="w-6 h-6" />
+          {/* Card 2: Satılan Ürün Maliyeti */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-indigo-500 to-indigo-400 text-white flex items-center justify-center shadow-lg">
+              <Receipt className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Satılan Ürün Maliyeti
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺0,00
-              </div>
-              <div className="text-[11px] text-[#9ca3af] mt-1">
-                Gerçek Satış Maliyeti
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Satılan Ürün Maliyeti</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺0,00</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-[#9ca3af]">Gerçek Satış Maliyeti</span>
             </div>
           </div>
 
-          {/* Card 3: Brüt Kâr (Teal) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#0d9488] text-white flex items-center justify-center shrink-0">
-              <TrendingUp className="w-6 h-6" />
+          {/* Card 3: Brüt Kâr */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-teal-500 to-teal-400 text-white flex items-center justify-center shadow-lg">
+              <TrendingUp className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Brüt Kâr
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺0,00
-              </div>
-              <div className="text-[11px] text-[#9ca3af] mt-1">
-                Ciro - Satılan Ürün Maliyeti
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Brüt Kâr</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺0,00</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-[#9ca3af]">Ciro - Satılan Ürün Maliyeti</span>
             </div>
           </div>
 
-          {/* Card 4: Net Kâr (Cyan) */}
-          <div className="bg-white rounded-[6px] border border-[#e5e7eb] p-4 shadow-2xs flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[4px] bg-[#0891b2] text-white flex items-center justify-center shrink-0">
-              <Wallet className="w-6 h-6" />
+          {/* Card 4: Net Kâr */}
+          <div className="bg-white rounded-lg shadow-sm border border-[#e5e7eb] relative px-4 pb-4 pt-4">
+            <div className="absolute -top-5 left-4 w-16 h-16 rounded-lg bg-gradient-to-tr from-cyan-500 to-cyan-400 text-white flex items-center justify-center shadow-lg">
+              <Wallet className="w-8 h-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-xs text-[#6b7280] block truncate">
-                Net Kâr
-              </span>
-              <div className="text-xl font-bold text-[#111827] mt-0.5">
-                ₺0,00
-              </div>
-              <div className="text-[11px] text-[#9ca3af] mt-1">
-                Brüt Kâr - Giderler
-              </div>
+            <div className="text-right pl-20">
+              <span className="text-[13px] text-[#6b7280] block">Net Kâr</span>
+              <div className="text-2xl font-bold text-[#374151] mt-1">₺0,00</div>
+            </div>
+            <div className="border-t border-[#f3f4f6] mt-4 pt-3 text-right">
+              <span className="text-[12px] text-[#9ca3af]">Brüt Kâr - Giderler</span>
             </div>
           </div>
         </div>

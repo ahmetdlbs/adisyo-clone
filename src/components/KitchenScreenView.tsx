@@ -53,77 +53,8 @@ export default function KitchenScreenView({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#edf0f5] overflow-hidden select-none">
-      {/* Top Header */}
-      <div className="h-14 bg-white border-b border-[#d8dde4] px-4 flex items-center justify-between shrink-0 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onOpenDrawer}
-            className="p-1.5 hover:bg-gray-100 rounded-[4px] text-[#2b2f36] cursor-pointer"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="font-semibold text-sm text-[#2b2f36]">
-            Mutfak / Siparişler
-          </span>
-        </div>
-
-        {/* Right standard POS controls */}
-        <div className="flex items-center gap-3 text-xs text-[#4b5563]">
-          <button
-            type="button"
-            className="w-8 h-8 rounded-full bg-[#fde68a] text-amber-900 flex items-center justify-center hover:opacity-90 cursor-pointer"
-          >
-            <Gift className="w-4 h-4" />
-          </button>
-
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#e5e7eb] hover:bg-gray-200 text-xs font-semibold text-[#374151] cursor-pointer"
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Katıl</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="w-8 h-8 rounded-full bg-[#e5e7eb] hover:bg-gray-200 flex items-center justify-center cursor-pointer"
-          >
-            <RefreshCw className="w-4 h-4 text-[#4b5563]" />
-          </button>
-
-          <button
-            type="button"
-            className="w-8 h-8 rounded-full bg-[#e5e7eb] hover:bg-gray-200 flex items-center justify-center cursor-pointer"
-          >
-            <MoreVertical className="w-4 h-4 text-[#4b5563]" />
-          </button>
-
-          <button
-            type="button"
-            className="w-8 h-8 rounded-full bg-[#e5e7eb] hover:bg-gray-200 flex items-center justify-center cursor-pointer"
-          >
-            <Megaphone className="w-4 h-4 text-[#4b5563]" />
-          </button>
-
-          <div className="h-5 w-px bg-gray-300 mx-1" />
-
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#fee2e2] text-[#b84a43] text-xs font-semibold hover:bg-[#fecaca] cursor-pointer"
-          >
-            <Headphones className="w-3.5 h-3.5" />
-            <span>Destek İste</span>
-          </button>
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#dbeafe] text-[#1e40af] text-xs font-semibold">
-            <UserCog className="w-3.5 h-3.5" />
-            <span>84425 - Ahmet</span>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col flex-1 bg-[#edf0f5] overflow-hidden select-none">
+      {/* Top Header removed to use MainLayout's TopHeader */}
 
       {/* Sub Toolbar matching mutfak_ekrani_1789840893669.png */}
       <div className="h-12 px-6 flex items-center justify-between shrink-0">
@@ -200,28 +131,38 @@ export default function KitchenScreenView({
               </div>
 
               {/* Order Items & Timers */}
-              <div className="p-4 bg-[#fafbfc]">
-                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-[#b45309]">
-                      Hazırlanıyor
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-[#991b1b] text-white font-mono text-xs font-bold shadow-2xs">
-                      {formatTime(timer1)}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                      <User className="w-3 h-3" />
-                      Ahmet
-                    </span>
-                    <span className="text-xs font-bold text-gray-900">
-                      1 Tam - Çay
-                    </span>
+              <div className="p-4 bg-white">
+                <div className="flex items-center justify-between p-3 rounded-md border border-orange-200 bg-orange-50/50 relative">
+                  {/* Left border accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 rounded-l-md"></div>
+                  
+                  <div className="flex items-start gap-6 ml-2">
+                    {/* Status & Timer Column */}
+                    <div className="flex flex-col gap-1.5 w-[85px]">
+                      <span className="text-xs font-semibold text-[#f59e0b]">
+                        Hazırlanıyor
+                      </span>
+                      <div className="px-2 py-1 rounded-md bg-[#b91c1c] text-white text-center text-xs shadow-sm">
+                        {formatTime(timer1)}
+                      </div>
+                    </div>
+
+                    {/* Waiter & Item Column */}
+                    <div className="flex flex-col justify-between py-0.5 h-[42px]">
+                      <span className="flex items-center gap-1 text-[11px] text-gray-500 font-medium">
+                        <User className="w-3.5 h-3.5" />
+                        Ahmet
+                      </span>
+                      <span className="text-[13px] text-gray-900">
+                        1 Tam - Çay
+                      </span>
+                    </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setTicket1Completed(true)}
-                    className="px-3 py-1 rounded bg-[#e5e7eb] hover:bg-green-600 hover:text-white text-xs font-semibold text-gray-700 cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-md bg-[#e5e7eb] hover:bg-green-600 hover:text-white text-xs font-semibold text-gray-700 cursor-pointer transition-colors"
                   >
                     Hazır
                   </button>
@@ -259,28 +200,38 @@ export default function KitchenScreenView({
               </div>
 
               {/* Order Items & Timers */}
-              <div className="p-4 bg-[#fefce8]/40">
-                <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-[#b45309]">
-                      Hazırlanıyor
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-[#991b1b] text-white font-mono text-xs font-bold shadow-2xs">
-                      {formatTime(timer2)}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                      <User className="w-3 h-3" />
-                      Ahmet
-                    </span>
-                    <span className="text-xs font-bold text-gray-900">
-                      1 Tam - Çay
-                    </span>
+              <div className="p-4 bg-white">
+                <div className="flex items-center justify-between p-3 rounded-md border border-orange-200 bg-orange-50/50 relative">
+                  {/* Left border accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 rounded-l-md"></div>
+                  
+                  <div className="flex items-start gap-6 ml-2">
+                    {/* Status & Timer Column */}
+                    <div className="flex flex-col gap-1.5 w-[85px]">
+                      <span className="text-xs font-semibold text-[#f59e0b]">
+                        Hazırlanıyor
+                      </span>
+                      <div className="px-2 py-1 rounded-md bg-[#b91c1c] text-white text-center text-xs shadow-sm">
+                        {formatTime(timer2)}
+                      </div>
+                    </div>
+
+                    {/* Waiter & Item Column */}
+                    <div className="flex flex-col justify-between py-0.5 h-[42px]">
+                      <span className="flex items-center gap-1 text-[11px] text-gray-500 font-medium">
+                        <User className="w-3.5 h-3.5" />
+                        Ahmet
+                      </span>
+                      <span className="text-[13px] text-gray-900">
+                        1 Tam - Çay
+                      </span>
+                    </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setTicket2Completed(true)}
-                    className="px-3 py-1 rounded bg-[#e5e7eb] hover:bg-green-600 hover:text-white text-xs font-semibold text-gray-700 cursor-pointer transition-colors"
+                    className="px-4 py-2 rounded-md bg-[#e5e7eb] hover:bg-green-600 hover:text-white text-xs font-semibold text-gray-700 cursor-pointer transition-colors"
                   >
                     Hazır
                   </button>

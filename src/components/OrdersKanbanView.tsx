@@ -92,11 +92,19 @@ function TakeawayAvatar() {
 interface OrdersKanbanViewProps {
   orders: KanbanOrder[];
   onSelectOrder: (order: KanbanOrder) => void;
+  onPrintOrder?: (order: KanbanOrder) => void;
+  onPayOrder?: (order: KanbanOrder) => void;
+  onCancelOrder?: (order: KanbanOrder) => void;
+  onMarkReady?: (order: KanbanOrder) => void;
 }
 
 export default function OrdersKanbanView({
   orders,
   onSelectOrder,
+  onPrintOrder,
+  onPayOrder,
+  onCancelOrder,
+  onMarkReady,
 }: OrdersKanbanViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [integrationCollapsed, setIntegrationCollapsed] = useState(false);
@@ -212,13 +220,13 @@ export default function OrdersKanbanView({
             display: "flex",
             alignItems: "center",
             gap: 5,
-            padding: "6px 12px",
-            background: "transparent",
-            border: "none",
-            borderRadius: 8,
-            color: "#374151",
+            padding: "8px 12px",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 6,
+            color: "#4b5563",
             fontSize: 13,
-            fontWeight: 500,
+            fontWeight: 600,
             cursor: "pointer",
           }}
         >
@@ -314,6 +322,9 @@ export default function OrdersKanbanView({
                   onSelect={() => onSelectOrder(order)}
                   onOpenMenu={(e) => openMenu(e, order.id)}
                   fullDate={fullDate}
+                  onPrint={() => onPrintOrder && onPrintOrder(order)}
+                  onPay={() => onPayOrder && onPayOrder(order)}
+                  onMarkReady={() => onMarkReady && onMarkReady(order)}
                 />
               ))}
               {integrationItems.length === 0 && <EmptyCol />}
@@ -342,6 +353,9 @@ export default function OrdersKanbanView({
                 onSelect={() => onSelectOrder(order)}
                 onOpenMenu={(e) => openMenu(e, order.id)}
                 fullDate={fullDate}
+                onPrint={() => onPrintOrder && onPrintOrder(order)}
+                onPay={() => onPayOrder && onPayOrder(order)}
+                onMarkReady={() => onMarkReady && onMarkReady(order)}
               />
             ))}
             {preparingItems.length === 0 && <EmptyCol />}
@@ -369,6 +383,9 @@ export default function OrdersKanbanView({
                 onSelect={() => onSelectOrder(order)}
                 onOpenMenu={(e) => openMenu(e, order.id)}
                 fullDate={fullDate}
+                onPrint={() => onPrintOrder && onPrintOrder(order)}
+                onPay={() => onPayOrder && onPayOrder(order)}
+                onMarkReady={() => onMarkReady && onMarkReady(order)}
               />
             ))}
             {waitingItems.length === 0 && <EmptyCol />}
@@ -396,6 +413,9 @@ export default function OrdersKanbanView({
                 onSelect={() => onSelectOrder(order)}
                 onOpenMenu={(e) => openMenu(e, order.id)}
                 fullDate={fullDate}
+                onPrint={() => onPrintOrder && onPrintOrder(order)}
+                onPay={() => onPayOrder && onPayOrder(order)}
+                onMarkReady={() => onMarkReady && onMarkReady(order)}
               />
             ))}
             {deliveryItems.length === 0 && <EmptyCol />}
@@ -426,35 +446,38 @@ export default function OrdersKanbanView({
             }}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            {[
-              { label: "Adisyonu Aç", icon: ExternalLink },
-              { label: "Fiş Yazdır", icon: Printer },
-              { label: "Öde", icon: CreditCard },
-              { label: "Sipariş İptal Et", icon: null, danger: true },
-            ].map((item) => (
               <button
-                key={item.label}
+                key="adisyon"
                 type="button"
-                onClick={() => setOpenMenuId(null)}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 16px",
-                  fontSize: 13,
-                  color: item.danger ? "#dc2626" : "#374151",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  borderTop: item.danger ? "1px solid #f3f4f6" : "none",
-                }}
+                onClick={() => { setOpenMenuId(null); onSelectOrder(filtered.find(o => o.id === openMenuId)!); }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", fontSize: 13, color: "#374151", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
               >
-                {item.icon && <item.icon size={14} />}
-                {item.label}
+                <ExternalLink size={14} /> Adisyonu Aç
               </button>
-            ))}
+              <button
+                key="yazdir"
+                type="button"
+                onClick={() => { setOpenMenuId(null); if (onPrintOrder) onPrintOrder(filtered.find(o => o.id === openMenuId)!); }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", fontSize: 13, color: "#374151", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+              >
+                <Printer size={14} /> Fiş Yazdır
+              </button>
+              <button
+                key="ode"
+                type="button"
+                onClick={() => { setOpenMenuId(null); if (onPayOrder) onPayOrder(filtered.find(o => o.id === openMenuId)!); }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", fontSize: 13, color: "#374151", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}
+              >
+                <CreditCard size={14} /> Öde
+              </button>
+              <button
+                key="iptal"
+                type="button"
+                onClick={() => { setOpenMenuId(null); if (onCancelOrder) onCancelOrder(filtered.find(o => o.id === openMenuId)!); }}
+                style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", fontSize: 13, color: "#dc2626", background: "transparent", border: "none", borderTop: "1px solid #f3f4f6", cursor: "pointer", textAlign: "left" }}
+              >
+                Sipariş İptal Et
+              </button>
           </div>
         </>
       )}
@@ -508,9 +531,12 @@ interface OrderCardProps {
   onSelect: () => void;
   onOpenMenu: (e: React.MouseEvent) => void;
   fullDate: (t: string) => string;
+  onPrint?: () => void;
+  onPay?: () => void;
+  onMarkReady?: () => void;
 }
 
-function OrderCard({ order, onSelect, onOpenMenu, fullDate }: OrderCardProps) {
+function OrderCard({ order, onSelect, onOpenMenu, fullDate, onPrint, onPay, onMarkReady }: OrderCardProps) {
   const isTable = order.type === "table";
 
   return (
@@ -595,18 +621,18 @@ function OrderCard({ order, onSelect, onOpenMenu, fullDate }: OrderCardProps) {
 
         {/* Yazdır — only for table orders */}
         {isTable && (
-          <IconBtn title="Yazdır" onClick={(e) => { e.stopPropagation(); alert("Fiş yazdırılıyor..."); }}>
+          <IconBtn title="Yazdır" onClick={(e) => { e.stopPropagation(); if (onPrint) onPrint(); }}>
             <Printer size={16} />
           </IconBtn>
         )}
 
         {/* Öde */}
-        <IconBtn title="Öde" onClick={(e) => { e.stopPropagation(); alert("Ödeme ekranı..."); }}>
+        <IconBtn title="Öde" onClick={(e) => { e.stopPropagation(); if (onPay) onPay(); }}>
           <CreditCard size={16} />
         </IconBtn>
 
         {/* Cloche */}
-        <IconBtn title="Hazır İşaretle" onClick={(e) => { e.stopPropagation(); alert("Sipariş hazır!"); }}>
+        <IconBtn title="Hazır İşaretle" onClick={(e) => { e.stopPropagation(); if (onMarkReady) onMarkReady(); }}>
           <ClocheIcon size={16} />
         </IconBtn>
 

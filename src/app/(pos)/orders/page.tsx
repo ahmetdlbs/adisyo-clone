@@ -71,6 +71,23 @@ export default function OrdersPage() {
     setActiveOrderType("paket");
   };
 
+  const getTableDataFromKanban = (ord: KanbanOrder): TableData | null => {
+    if (ord.type === "table") {
+      return tables.find((t) => t.name === ord.title) || null;
+    }
+    return {
+      id: ord.id,
+      name: ord.title,
+      section: "salon" as const,
+      status: "occupied" as const,
+      customerName: ord.customerName,
+      waiter: "ahmet",
+      orderNumber: parseInt(ord.orderNo.replace("#", "")) || 0,
+      duration: ord.time,
+      items: [],
+    };
+  };
+
   return (
     <div className="flex flex-col h-full w-full overflow-hidden bg-[#edf0f5]">
       {activeTable ? (
@@ -95,42 +112,27 @@ export default function OrdersPage() {
           onSelectTable={handleSelectTable}
           onOpenTableQuickModal={(tbl) => setQuickModalTable(tbl)}
           onSelectKanbanOrder={(ord) => {
-            if (ord.type === "table") {
-              const matched = tables.find((t) => t.name === ord.title);
-              if (matched) {
+            const matched = getTableDataFromKanban(ord);
+            if (matched) {
+              if (ord.type === "table") {
                 setActiveTableId(matched.id);
                 setActiveOrderType("table");
+              } else if (ord.type === "takeaway") {
+                setTakeawayOrderStub(matched);
+                setActiveOrderType("gel-al");
+              } else if (ord.type === "delivery") {
+                setTakeawayOrderStub(matched);
+                setActiveOrderType("paket");
               }
-            } else if (ord.type === "takeaway") {
-              const stub = {
-                id: ord.id,
-                name: ord.title,
-                section: "salon" as const,
-                status: "occupied" as const,
-                customerName: ord.customerName,
-                waiter: "ahmet",
-                orderNumber: parseInt(ord.orderNo.replace("#", "")) || 0,
-                duration: ord.time,
-                items: [],
-              };
-              setTakeawayOrderStub(stub);
-              setActiveOrderType("gel-al");
-            } else if (ord.type === "delivery") {
-              const stub = {
-                id: ord.id,
-                name: ord.title,
-                section: "salon" as const,
-                status: "occupied" as const,
-                customerName: ord.customerName,
-                waiter: "ahmet",
-                orderNumber: parseInt(ord.orderNo.replace("#", "")) || 0,
-                duration: ord.time,
-                items: [],
-              };
-              setTakeawayOrderStub(stub);
-              setActiveOrderType("paket");
             }
           }}
+          onPrintKanbanOrder={(ord) => alert(`${ord.title} adisyonu yazdırıldı.`)}
+          onPayKanbanOrder={(ord) => {
+            const tbl = getTableDataFromKanban(ord);
+            if (tbl) setPaymentModalTable(tbl);
+          }}
+          onCancelKanbanOrder={(ord) => alert(`${ord.title} siparişi iptal edildi.`)}
+          onMarkReadyKanbanOrder={(ord) => alert(`${ord.title} hazır olarak işaretlendi!`)}
           onQuickGelAl={handleOpenGelAl}
           onQuickPaket={handleOpenPaket}
           onLogout={() => {}}
