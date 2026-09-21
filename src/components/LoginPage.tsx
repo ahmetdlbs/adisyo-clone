@@ -4,6 +4,7 @@ import { useCallback, useState, type SubmitEvent } from "react";
 import AuthTemplate from "@/components/auth/AuthTemplate";
 import MaterialIcon from "@/components/ui/MaterialIcon";
 import SnackBar from "@/components/ui/SnackBar";
+import Link from "next/link";
 
 const LOGIN_ERROR_MESSAGE = "Kullanıcı adı veya şifre hatalı.";
 const USERNAME_REQUIRED_MESSAGE = "*Boş geçilemez";
@@ -115,13 +116,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         )}
 
         <div className="mt-[15px] flex items-center justify-end">
-          <button
-            type="button"
+          <Link
+            href="/forgot-password"
             data-test-id="login-forgot-password-link"
             className="block cursor-pointer text-left text-grey-1 capitalize hover:text-fire-red-1"
           >
             Şifremi unuttum
-          </button>
+          </Link>
         </div>
 
         <button
@@ -136,14 +137,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         </button>
       </form>
 
-      <button
-        type="button"
+      <Link
+        href="/register"
         className="mt-[30px] inline-block h-[35px] w-full cursor-pointer rounded-[10px] px-[15px] py-px text-center leading-8 text-grey-1 [transition:box-shadow_.2s_cubic-bezier(.4,0,1,1),background-color_.2s_cubic-bezier(.4,0,.2,1)] hover:bg-black/5"
       >
         <span>
           Üye Değil Misiniz? <b className="font-bold text-fire-red-1">Şimdi Kaydolun</b>
         </span>
-      </button>
+      </Link>
 
       <SnackBar message={errorMessage} onClose={closeSnackBar} />
     </AuthTemplate>

@@ -10,13 +10,22 @@ import {
   Megaphone,
   Headphones,
   User,
+  Settings,
+  CreditCard,
+  Hash,
+  Wand2,
+  LogOut,
+  ChevronRight
 } from "lucide-react";
+import Link from "next/link";
 
 interface TopHeaderProps {
   onToggleMenu: () => void;
 }
 
 export default function TopHeader({ onToggleMenu }: TopHeaderProps) {
+  const [isProfileOpen, setIsProfileOpen] = React.useState(false);
+
   return (
     <header className="h-14 bg-white border-b border-[#e5e7eb] px-4 flex items-center justify-between select-none z-20 shrink-0">
       {/* Left side: Hamburger + "Ahmet" */}
@@ -96,10 +105,57 @@ export default function TopHeader({ onToggleMenu }: TopHeaderProps) {
           <span>Destek İste</span>
         </button>
 
-        {/* User Badge: 84425 - Ahmet */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#eff6ff] text-[#1d4ed8] rounded-full border border-[#dbeafe] text-xs font-semibold">
-          <User className="w-3.5 h-3.5" />
-          <span>84425 - Ahmet</span>
+        {/* User Badge Dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#eff6ff] hover:bg-[#dbeafe] text-[#1d4ed8] rounded-full border border-[#dbeafe] text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>84425 - Ahmet</span>
+          </button>
+
+          {isProfileOpen && (
+            <div 
+              className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-100 py-2 z-50 flex flex-col"
+              onClick={() => setIsProfileOpen(false)}
+            >
+              <Link href="/profile" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors">
+                <User className="w-4 h-4 text-gray-500" />
+                Profil
+              </Link>
+              <Link href="/restaurant-settings" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors">
+                <Settings className="w-4 h-4 text-gray-500" />
+                Restaurant Ayarları
+              </Link>
+              <Link href="/account" className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors">
+                <CreditCard className="w-4 h-4 text-gray-500" />
+                Hesap Bilgileri
+              </Link>
+              
+              <div className="h-px bg-gray-100 my-1"></div>
+              
+              <button className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors w-full">
+                <div className="flex items-center gap-3">
+                  <Hash className="w-4 h-4 text-gray-500" />
+                  Sosyal Medya
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </button>
+              <button className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors w-full">
+                <Wand2 className="w-4 h-4 text-gray-500" />
+                Hızlı Başlangıç Rehberi
+              </button>
+              
+              <div className="h-px bg-gray-100 my-1"></div>
+              
+              <Link href="/login" className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-gray-700 hover:text-red-600 text-sm font-medium transition-colors w-full">
+                <LogOut className="w-4 h-4 text-gray-500" />
+                Çıkış
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>
