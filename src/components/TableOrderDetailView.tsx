@@ -60,10 +60,8 @@ export default function TableOrderDetailView({
     0
   );
 
-  // Group items by their time (simulate time-grouped ticket like live Adisyo)
   const itemGroups: { time: string; items: typeof table.items }[] = [];
   table.items.forEach((item) => {
-    // Use item index to create two groups (first half earlier, second half later)
     const idx = table.items.indexOf(item);
     const half = Math.ceil(table.items.length / 2);
     const time = idx < half ? "20:03" : "16:36";
@@ -75,7 +73,7 @@ export default function TableOrderDetailView({
     }
   });
 
-  const kdvRate = 0.1; // %10 KDV
+  const kdvRate = 0.1;
   const brutTutar = totalAmount / (1 + kdvRate);
   const kdv = totalAmount - brutTutar;
   const indirimTutari = 0;
@@ -146,21 +144,20 @@ export default function TableOrderDetailView({
 
   return (
     <div className="flex-1 flex flex-col h-screen w-screen overflow-hidden select-none bg-[#edf0f5]">
-      {/* Top Header Bar: Split 1:1 with panels */}
+      {/* Top Header Bar */}
       <div className="h-[50px] flex items-stretch shrink-0 z-20">
-        {/* Left Header (Dark Charcoal #32373c) - 390px matching live Adisyo */}
-        <div className="w-[390px] bg-[#32373c] text-white px-3 flex items-center justify-between gap-1.5 shrink-0 border-r border-[#262a2e]">
-          <div className="flex items-center gap-2">
+        {/* Left Header (Dark Charcoal) */}
+        <div className="w-[390px] bg-[#32373c] text-white px-3 flex items-center justify-between shrink-0 border-r border-[#262a2e]">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={onBack}
-              className="p-1 hover:bg-white/10 rounded cursor-pointer"
+              className="p-1.5 hover:bg-white/10 rounded cursor-pointer"
               title="Geri"
             >
-              <ArrowLeft className="w-5 h-5 text-white" />
+              <ArrowLeft className="w-[18px] h-[18px] text-white/90" />
             </button>
-
-            <div className="flex items-center gap-1.5 font-semibold text-[15px]">
+            <div className="flex items-center gap-2 pl-1 font-semibold text-[15px]">
               <span>
                 {orderType === "gel-al"
                   ? "Gel Al Sipariş"
@@ -179,58 +176,54 @@ export default function TableOrderDetailView({
             </div>
           </div>
 
-          <div className="h-4 w-px bg-white/20" />
-
           {/* Action icons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button type="button" className="p-1.5 text-white/80 hover:text-white cursor-pointer">
-              <PlusSquare className="w-[18px] h-[18px]" />
+              <PlusSquare className="w-4 h-4" />
             </button>
             {orderType === "table" && (
               <button type="button" className="p-1.5 text-white/80 hover:text-white cursor-pointer">
-                <Printer className="w-[18px] h-[18px]" />
+                <Printer className="w-4 h-4" />
               </button>
             )}
             <button type="button" className="p-1.5 text-white/80 hover:text-white cursor-pointer">
-              <User className="w-[18px] h-[18px]" />
+              <User className="w-4 h-4" />
+            </button>
+            {/* MARŞ Button */}
+            <button
+              type="button"
+              onClick={() => alert("1. Marş Bildirimi Gönderildi.")}
+              className="ml-1 px-3 py-1 bg-[#40454b] hover:bg-[#4a5057] text-white/90 text-[11px] font-bold rounded-[2px] tracking-wider transition-colors cursor-pointer"
+            >
+              MARŞ
             </button>
           </div>
-
-          {/* MARŞ Button */}
-          <button
-            type="button"
-            onClick={() => alert("1. Marş Bildirimi Gönderildi.")}
-            className="px-3 py-1.5 bg-[#1e2225] hover:bg-black text-white text-xs font-bold rounded-[3px] tracking-wider transition-colors cursor-pointer"
-          >
-            MARŞ
-          </button>
         </div>
 
-        {/* Right Header (Light Gray #e6e9ed) */}
-        <div className="flex-1 bg-[#e6e9ed] flex items-center justify-between px-4 gap-3 border-b border-[#d8dde4]">
+        {/* Right Header (Light Gray) */}
+        <div className="flex-1 bg-[#e6e9ed] flex items-center justify-between px-6 gap-3">
           <div className="flex-1 max-w-2xl">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Ürün Adı veya Barkod ile Arama"
-              className="w-full h-9 px-4 bg-white border border-[#d8dde4] rounded-[3px] text-sm text-[#2b2f36] placeholder-[#8e8e8e] outline-none"
+              className="w-full h-9 bg-transparent border-none text-[15px] text-[#2b2f36] placeholder-[#8e8e8e] outline-none"
             />
           </div>
 
-          {/* Right Dark Icon Container (#32373c) */}
-          <div className="bg-[#32373c] text-white h-9 px-4 rounded-[3px] flex items-center gap-4 shrink-0">
-            <div className="flex items-center gap-1.5 text-sm">
+          <div className="h-full flex items-center gap-5 text-white/90 shrink-0 bg-[#32373c] px-5 -mr-6">
+            <div className="flex items-center gap-1.5 text-sm cursor-pointer hover:text-white">
               <Users className="w-4 h-4" />
               <span>1</span>
             </div>
-            <button type="button" className="hover:text-white cursor-pointer">
+            <button type="button" className="cursor-pointer hover:text-white">
               <Calendar className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => onUpdateTableItems(table.id, [])}
-              className="hover:text-white cursor-pointer"
+              className="cursor-pointer hover:text-white"
               title="Siparişi Sıfırla"
             >
               <RotateCcw className="w-4 h-4" />
@@ -241,187 +234,162 @@ export default function TableOrderDetailView({
 
       {/* Split Body */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT PANEL: Ticket Adisyon Fişi (390px — matching live Adisyo) */}
-        <div className="w-[390px] bg-white border-r border-[#d8dde4] flex flex-col justify-between overflow-hidden shrink-0">
-          {/* Ticket Header */}
-          <div className="px-4 py-2.5 border-b border-[#eef1f6]">
-            <div className="flex items-center justify-between text-[13px] text-[#555]">
-              <span>Adisyon: {orderType === "table" ? (table.orderNumber || 461510410) : 0}</span>
-              <span className="text-[#388e3c] font-semibold">
-                Sipariş Durumu: Hazırlanıyor
-              </span>
-            </div>
-            {orderType === "table" && (
-              <>
-                <div className="text-center text-[12px] text-[#777] mt-1">
+        {/* LEFT PANEL: Ticket Adisyon Fişi */}
+        <div className="w-[390px] bg-[#f5f6f8] border-r border-[#d8dde4] flex flex-col justify-between overflow-hidden shrink-0">
+          
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Ticket Header */}
+            <div className="px-4 py-3 bg-[#f5f6f8]">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-[#666]">
+                <span>Adisyon: {orderType === "table" ? (table.orderNumber || 461510410) : 0}</span>
+                <span className="text-[#388e3c]">
+                  Sipariş Durumu: Hazırlanıyor
+                </span>
+              </div>
+              {orderType === "table" && (
+                <div className="text-center text-[11px] text-[#777] mt-3">
                   1. Marş hazırlanıyor
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Ticket Items List — grouped by time like live Adisyo */}
-          <div className="flex-1 overflow-y-auto">
-            {itemGroups.map((group) => (
-              <div key={group.time}>
-                {/* Time separator */}
-                <div className="text-center text-[12px] text-[#999] py-2">
-                  {group.time}
-                </div>
-                {group.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="py-3 px-3 flex items-center justify-between gap-2 hover:bg-gray-50 border-b border-[#f0f2f5] last:border-b-0"
-                  >
-                    {/* Left: Quantity square */}
-                    <div className="w-8 h-8 rounded-[4px] bg-[#f0f2f5] flex items-center justify-center font-bold text-sm text-[#333] shrink-0">
-                      {item.quantity}
-                    </div>
-
-                    {/* Middle: Product Name & Waiter */}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm text-[#222] truncate">
-                        {item.name}
-                      </div>
-                      <div className="text-xs text-[#888]">
-                        {item.portion}
-                      </div>
-                      <div className="text-xs text-[#888]">
-                        {item.waiter}
-                      </div>
-                    </div>
-
-                    {/* Right: Price & Icons */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-bold text-sm text-[#222]">
-                        ₺{(item.price * item.quantity).toFixed(2).replace(".", ",")}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="p-1 text-[#888] hover:text-[#333] cursor-pointer"
-                      >
-                        <List className="w-4 h-4" />
-                      </button>
-
-                      {/* 3-dots */}
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenItemMenuId(
-                              openItemMenuId === item.id ? null : item.id
-                            )
-                          }
-                          className="p-1 text-[#888] hover:text-[#333] cursor-pointer"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {openItemMenuId === item.id && (
-                          <div className="absolute right-0 top-6 w-36 bg-white border border-gray-200 rounded-[4px] shadow-lg py-1 z-30 text-sm">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleComplimentary(item.id)}
-                              className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer text-amber-800"
-                            >
-                              <Gift className="w-4 h-4" />
-                              <span>{item.isComplimentary ? "İkramı Kaldır" : "İkram"}</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="w-full text-left px-3 py-2 hover:bg-red-50 flex items-center gap-2 cursor-pointer text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span>Sil</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Ticket Footer — exact match to live Adisyo */}
-          <div className="border-t border-[#d8dde4] bg-white shrink-0">
-            {/* Red expand arrow — pointing down like live Adisyo */}
-            <div className="flex justify-end px-4 pt-2">
-              <ChevronUp className="w-5 h-5 text-[#b84a43] cursor-pointer rotate-180" />
+              )}
             </div>
 
-            {/* Financial Summary Rows */}
-            <div className="px-4 pb-2 space-y-1 text-[13px]">
-              <div className="flex items-center justify-between text-[#555]">
-                <span>Ara Toplam</span>
-                <span>₺{totalAmount.toFixed(2).replace(".", ",")}</span>
-              </div>
-              <div className="flex items-center justify-between text-[#555]">
-                <span>İndirim Tutarı</span>
-                <span>₺{indirimTutari.toFixed(2).replace(".", ",")}</span>
-              </div>
-              <div className="flex items-center justify-between font-bold text-[#222] text-sm">
+            {/* Ticket Items List */}
+            <div className="flex-1 overflow-y-auto px-2 pb-4">
+              {itemGroups.map((group) => (
+                <div key={group.time}>
+                  <div className="text-center text-[10px] text-[#999] py-2">
+                    {group.time}
+                  </div>
+                  {group.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="py-2.5 px-2 flex items-start gap-3 hover:bg-black/5 border-b border-gray-200/60 last:border-b-0"
+                    >
+                      {/* Qty Box */}
+                      <div className="w-8 h-8 rounded-[3px] bg-[#e6e8ec] flex items-center justify-center font-semibold text-sm text-[#333] shrink-0 mt-0.5">
+                        {item.quantity}
+                      </div>
+
+                      {/* Product Name & Details */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center pt-0.5">
+                        <div className="font-medium text-[13px] text-[#222] truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-[11px] text-[#888] mt-0.5">
+                          {item.portion}
+                        </div>
+                        <div className="text-[11px] text-[#888]">
+                          {item.waiter}
+                        </div>
+                      </div>
+
+                      {/* Price & Actions */}
+                      <div className="flex items-start gap-3 shrink-0 pt-0.5">
+                        <span className="font-semibold text-[13px] text-[#222]">
+                          ₺{(item.price * item.quantity).toFixed(2).replace(".", ",")}
+                        </span>
+
+                        <button
+                          type="button"
+                          className="p-1 -mt-1 text-[#999] hover:text-[#333] cursor-pointer"
+                        >
+                          <List className="w-[14px] h-[14px]" />
+                        </button>
+
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenItemMenuId(
+                                openItemMenuId === item.id ? null : item.id
+                              )
+                            }
+                            className="p-1 -mt-1 text-[#999] hover:text-[#333] cursor-pointer"
+                          >
+                            <MoreVertical className="w-[14px] h-[14px]" />
+                          </button>
+
+                          {openItemMenuId === item.id && (
+                            <div className="absolute right-0 top-5 w-36 bg-white border border-gray-200 rounded-[4px] shadow-lg py-1 z-30 text-sm">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleComplimentary(item.id)}
+                                className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2 cursor-pointer text-amber-800"
+                              >
+                                <Gift className="w-4 h-4" />
+                                <span>{item.isComplimentary ? "İkramı Kaldır" : "İkram"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="w-full text-left px-3 py-2 hover:bg-red-50 flex items-center gap-2 cursor-pointer text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Sil</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Ticket Footer (Totals & Buttons) */}
+          <div className="bg-[#f5f6f8] shrink-0">
+            {/* Expand arrow */}
+            <div className="flex justify-end px-3">
+              <ChevronUp className="w-5 h-5 text-[#c9302c] cursor-pointer" />
+            </div>
+
+            {/* Financial Summary */}
+            <div className="px-4 pb-3">
+              <div className="flex items-center justify-between font-bold text-[#333] text-[15px]">
                 <span>Toplam Tutar</span>
                 <span>₺{totalAmount.toFixed(2).replace(".", ",")}</span>
-              </div>
-              <div className="flex items-center justify-between text-[#555]">
-                <span>Brüt Tutar</span>
-                <span>₺{brutTutar.toFixed(2).replace(".", ",")}</span>
-              </div>
-              <div className="flex items-center justify-between text-[#555]">
-                <span>KDV</span>
-                <span>₺{kdv.toFixed(2).replace(".", ",")}</span>
-              </div>
-              <div className="flex items-center justify-between text-[#555]">
-                <span>Tahsil Edilen</span>
-                <span>₺{tahsilEdilen.toFixed(2).replace(".", ",")}</span>
               </div>
             </div>
 
             {/* Action Buttons Bar */}
             <div className="flex items-center gap-2 px-3 pb-3">
-              {/* Tag Button */}
               <button
                 type="button"
-                className="w-11 h-11 rounded-[4px] bg-white border border-[#d8dde4] text-[#b84a43] flex items-center justify-center shrink-0 cursor-pointer hover:bg-gray-50"
+                className="w-11 h-11 rounded-[3px] bg-white border border-gray-200 flex items-center justify-center shrink-0 cursor-pointer shadow-sm hover:bg-gray-50"
                 title="İndirim"
               >
-                <Tag className="w-5 h-5 text-[#c9302c]" />
+                <Tag className="w-5 h-5 text-[#c9302c]" fill="#c9302c" />
               </button>
 
               {orderType === "table" ? (
                 <>
-                  {/* ÖDE Button (Green) */}
                   <button
                     type="button"
                     onClick={onOpenPayment}
-                    className="flex-1 h-11 bg-[#388e3c] hover:bg-[#2e7d32] text-white text-sm font-bold rounded-[4px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                    className="flex-1 h-11 bg-[#43a047] hover:bg-[#388e3c] text-white text-[13px] font-bold rounded-[3px] flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
                   >
                     <span>ÖDE</span>
                     <span>₺{totalAmount.toFixed(2).replace(".", ",")}</span>
                   </button>
 
-                  {/* HIZLI ÖDE Button (Yellow) */}
                   <button
                     type="button"
                     onClick={onQuickPay}
-                    className="px-4 h-11 bg-[#fef3c7] hover:bg-[#fde68a] text-[#b45309] text-sm font-bold rounded-[4px] flex items-center gap-1.5 cursor-pointer transition-colors"
+                    className="flex-1 h-11 bg-[#fff8e1] hover:bg-[#ffecb3] text-[#f57f17] text-[13px] font-bold rounded-[3px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors border border-[#ffe082] shadow-sm"
                   >
-                    <Zap className="w-4 h-4 text-amber-600 fill-amber-500" />
+                    <Zap className="w-[14px] h-[14px] fill-current" />
                     <span>HIZLI ÖDE</span>
                   </button>
 
-                  {/* KAYDET Button (Red) */}
                   <button
                     type="button"
                     onClick={() => {
                       alert("Sipariş Kaydedildi.");
                       onBack();
                     }}
-                    className="px-5 h-11 bg-[#b84a43] hover:bg-[#a53f38] text-white text-sm font-bold rounded-[4px] flex items-center justify-center cursor-pointer transition-colors"
+                    className="px-6 h-11 bg-[#c9302c] hover:bg-[#b52b27] text-white text-[13px] font-bold rounded-[3px] flex items-center justify-center cursor-pointer transition-colors shadow-sm"
                   >
                     KAYDET
                   </button>
@@ -431,7 +399,7 @@ export default function TableOrderDetailView({
                   <button
                     type="button"
                     onClick={onOpenPayment}
-                    className="flex-1 h-11 bg-[#388e3c] hover:bg-[#2e7d32] text-white text-sm font-bold rounded-[4px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                    className="flex-1 h-11 bg-[#43a047] hover:bg-[#388e3c] text-white text-[13px] font-bold rounded-[3px] flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
                   >
                     <span>ÖDE</span>
                     <span>₺{totalAmount.toFixed(2).replace(".", ",")}</span>
@@ -439,7 +407,7 @@ export default function TableOrderDetailView({
                   <button
                     type="button"
                     onClick={() => { alert("Gel Al Sipariş Kaydedildi."); onBack(); }}
-                    className="px-6 h-11 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#b84a43] text-sm font-bold rounded-[4px] flex items-center justify-center cursor-pointer transition-colors"
+                    className="px-6 h-11 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#b84a43] text-[13px] font-bold rounded-[3px] flex items-center justify-center cursor-pointer transition-colors"
                   >
                     KAYDET
                   </button>
@@ -449,14 +417,14 @@ export default function TableOrderDetailView({
                   <button
                     type="button"
                     onClick={onOpenPayment}
-                    className="flex-1 h-11 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#b84a43] text-sm font-bold rounded-[4px] flex items-center justify-center cursor-pointer transition-colors"
+                    className="flex-1 h-11 bg-[#e5e7eb] hover:bg-[#d1d5db] text-[#b84a43] text-[13px] font-bold rounded-[3px] flex items-center justify-center cursor-pointer transition-colors"
                   >
                     ÖDEME TİPİ
                   </button>
                   <button
                     type="button"
                     onClick={() => { alert("Paket Sipariş Kaydedildi."); onBack(); }}
-                    className="px-6 h-11 bg-[#b84a43] hover:bg-[#a53f38] text-white text-sm font-bold rounded-[4px] flex items-center justify-center cursor-pointer transition-colors"
+                    className="px-6 h-11 bg-[#c9302c] hover:bg-[#b52b27] text-white text-[13px] font-bold rounded-[3px] flex items-center justify-center cursor-pointer transition-colors shadow-sm"
                   >
                     KAYDET
                   </button>
@@ -466,10 +434,10 @@ export default function TableOrderDetailView({
           </div>
         </div>
 
-        {/* RIGHT PANEL: Menu Categories & Product Cards Grid */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-[#edf0f5]">
+        {/* RIGHT PANEL: Menu Categories & Product Cards */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-[#e6e9ed]">
           {/* Categories Horizontal Tabs */}
-          <div className="h-[44px] bg-white border-b border-[#d8dde4] px-6 flex items-center gap-8 overflow-x-auto shrink-0 scrollbar-none">
+          <div className="h-[46px] bg-[#f5f6f8] border-b border-[#d8dde4] flex items-end px-2 overflow-x-auto shrink-0 scrollbar-none">
             {[
               { id: "favori", label: "FAVORİ ÜRÜNLER" },
               { id: "icecekler", label: "İÇECEKLER" },
@@ -486,21 +454,24 @@ export default function TableOrderDetailView({
                     setSelectedCategory(cat.id as any);
                     setSearchQuery("");
                   }}
-                  className={`h-full flex items-center text-[13px] font-semibold uppercase tracking-wide cursor-pointer transition-all whitespace-nowrap relative ${
+                  className={`px-6 pb-3 text-[12px] font-bold uppercase tracking-wide cursor-pointer transition-all whitespace-nowrap relative ${
                     isActive
-                      ? "text-[#b84a43] border-b-2 border-[#b84a43]"
-                      : "text-[#555] hover:text-black"
+                      ? "text-[#c9302c]"
+                      : "text-[#333] hover:text-[#c9302c]"
                   }`}
                 >
                   {cat.label}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[#c9302c]" />
+                  )}
                 </button>
               );
             })}
           </div>
 
           {/* Product Cards Grid */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="flex-1 overflow-y-auto p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredProducts.map((prod) => {
                 const qty = getProductQuantity(prod.name);
                 const isSelected = qty > 0;
@@ -508,49 +479,48 @@ export default function TableOrderDetailView({
                 return (
                   <div
                     key={prod.id}
-                    onClick={() => handleAddItem(prod)}
-                    className="h-[130px] rounded-[8px] bg-[#a8c5da] p-3 flex items-center justify-between cursor-pointer shadow-sm hover:opacity-95 transition-all select-none"
+                    className="h-[85px] rounded-[3px] bg-[#9ebfd2] flex items-stretch justify-between cursor-pointer overflow-hidden hover:opacity-95 select-none"
                   >
                     {/* Left: Title & Price */}
-                    <div className="flex-1 h-full flex flex-col justify-between pr-2">
-                      <span className="font-semibold text-sm text-black leading-tight">
+                    <div
+                      className="flex-1 flex flex-col justify-between p-2.5 min-w-0"
+                      onClick={() => handleAddItem(prod)}
+                    >
+                      <span className="font-medium text-[13px] text-[#222] leading-snug truncate whitespace-normal line-clamp-2">
                         {prod.name}
                       </span>
-                      <span className="text-sm font-bold text-black">
+                      <span className="text-[12px] text-[#222]">
                         ₺{prod.price.toFixed(2).replace(".", ",")}
                       </span>
                     </div>
 
                     {/* Right: Stepper Widget */}
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="w-9 h-full rounded-[4px] bg-white flex flex-col items-center justify-between py-1 shrink-0 shadow-sm border border-white/60"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleAddItem(prod)}
-                        className="w-full flex-1 flex items-center justify-center text-[#333] hover:text-green-700 cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-
+                    {isSelected && (
                       <div
-                        className={`w-6 h-6 rounded-[2px] flex items-center justify-center text-sm font-bold ${
-                          isSelected ? "bg-[#b84a43] text-white" : "text-[#777]"
-                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-[34px] flex flex-col items-stretch shrink-0 bg-white border-l border-[#8ba9bc]"
                       >
-                        {qty}
-                      </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddItem(prod)}
+                          className="flex-1 flex items-center justify-center text-[#c9302c] hover:bg-gray-50 cursor-pointer"
+                        >
+                          <Plus className="w-[14px] h-[14px]" strokeWidth={2.5} />
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDecrementItem(prod.name)}
-                        disabled={qty === 0}
-                        className="w-full flex-1 flex items-center justify-center text-[#333] hover:text-red-700 disabled:opacity-20 cursor-pointer"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                    </div>
+                        <div className="h-7 bg-[#c9302c] flex items-center justify-center text-[13px] font-bold text-white shadow-inner">
+                          {qty}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDecrementItem(prod.name)}
+                          className="flex-1 flex items-center justify-center text-[#c9302c] hover:bg-gray-50 cursor-pointer"
+                        >
+                          <Minus className="w-[14px] h-[14px]" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
