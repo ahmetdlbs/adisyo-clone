@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Light-only theme: `dark:` utilities in vendored components stay inert until a `.dark` token set exists. */
+@custom-variant dark (&:is(.dark *));
 
 /* Euclid is the app font of the original product. The files live in /public/fonts (git-ignored);
    when they are missing the stack falls back to Quicksand. */
@@ -26,54 +31,120 @@
   font-display: swap;
 }
 
-@theme {
-  --font-sans: "Euclid", var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
-
-  --color-ink: #303030;
-  --color-fire-red-1: #b64e49;
-  --color-grey-1: #808080;
-  --color-grey-2: #a0a0a0;
-  --color-grey-3: #d9d9d9;
-  --color-grey-4: #e6e6e6;
-}
-
+/* ── Design tokens ───────────────────────────────────────────────────────────
+   Single source of truth for colour. Components use the semantic utilities
+   (bg-primary, text-muted-foreground, border-border, ...) and never raw hex. */
 :root {
-  --primary-adisyo: #b5473f;
-  --primary-hover: #a13d36;
-  --accent-red: #c92c2c;
-  --bg-main: #f8f9fa;
-  --card-bg: #ffffff;
-  --border-color: #e5e7eb;
+  --background: #ffffff;
+  --foreground: #303030;
+  /* App canvas: the grey surface POS/dashboard cards sit on. */
+  --canvas: #edf0f5;
+
+  --card: #ffffff;
+  --card-foreground: #303030;
+  --popover: #ffffff;
+  --popover-foreground: #303030;
+
+  /* Original Adisyo brand red (the colour every screen in the source design used). 4.98:1 against white. */
+  --primary: #d32f2f;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f2f5;
+  --secondary-foreground: #303030;
+  --muted: #f0f2f5;
+  /* 6.0:1 on white, 5.4:1 on --muted. */
+  --muted-foreground: #5b6472;
+  --accent: #f3f4f6;
+  --accent-foreground: #303030;
+
+  --destructive: #dc2626;
+  /* Both pass 4.5:1 with white text. */
+  --success: #2e7d32;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+
+  /* Icon tile in front of every definition screen's title (3:1 against white, as a graphic). */
+  --section: #e86c2e;
+  --section-foreground: #ffffff;
+
+  --border: #e5e7eb;
+  --input: #d8dde4;
+  --ring: #d32f2f;
+
+  --chart-1: #d32f2f;
+  --chart-2: #2f80c8;
+  --chart-3: #2e7d32;
+  --chart-4: #f2a93b;
+  --chart-5: #7e57c2;
+  /* Teal accent the original used specifically for the sales curve and the table-occupancy ring, kept apart
+     from the brand red so those two informational charts read as data, not as a call to action. */
+  --chart-sales: #0d9488;
+
+  --radius: 0.5rem;
 }
 
-body {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  background-color: #fff;
-  color: #333;
+@theme inline {
+  --font-sans: "Euclid", var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-section: var(--section);
+  --color-section-foreground: var(--section-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-sales: var(--chart-sales);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@keyframes snackbar-in {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
 
-@keyframes menu-in {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
+  html {
+    @apply font-sans;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+
+  /* Euclid ships no 400 weight, so medium is the body baseline. */
+  body {
+    @apply bg-background text-foreground text-[14px] leading-5 font-medium;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 

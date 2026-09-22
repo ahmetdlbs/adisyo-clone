@@ -1,11 +1,16 @@
-import ForgotPasswordView from "@/components/ForgotPasswordView";
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import { AuthLayout } from "@/features/auth/components/auth-layout";
+import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form";
 
 export const metadata: Metadata = {
-  title: "Şifremi Unuttum | Adisyo",
+  title: "Şifremi Unuttum",
   description: "Adisyo şifrenizi sıfırlayın.",
 };
 
 export default function ForgotPasswordPage() {
-  return <ForgotPasswordView />;
+  return (
+    <AuthLayout>
+      <ForgotPasswordForm />
+    </AuthLayout>
+  );
 }

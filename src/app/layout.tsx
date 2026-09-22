@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Quicksand } from "next/font/google";
-import "material-icons/iconfont/material-icons.css";
 import "./globals.css";
-import { PosProvider } from "@/context/PosContext";
-import { ShellProvider } from "@/components/shell/ShellContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 const quicksand = Quicksand({
   subsets: ["latin", "latin-ext"],
@@ -12,7 +11,8 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "Adisyo",
+  // Pages set only their own name ("KDV Oranları"); the template adds the product.
+  title: { default: "Adisyo", template: "%s | Adisyo" },
   robots: { index: false, follow: false },
   other: { google: "notranslate" },
   icons: {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#c92c2c",
+  themeColor: "#d32f2f",
 };
 
 export default function RootLayout({
@@ -32,11 +32,8 @@ export default function RootLayout({
   return (
     <html lang="tr" className={quicksand.variable}>
       <body className="min-h-screen overflow-x-hidden antialiased">
-        <PosProvider>
-          <ShellProvider>
-            {children}
-          </ShellProvider>
-        </PosProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

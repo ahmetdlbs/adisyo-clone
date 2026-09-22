@@ -1,11 +1,17 @@
-import RegisterView from "@/components/RegisterView";
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import { AuthLayout } from "@/features/auth/components/auth-layout";
+import { RegisterForm } from "@/features/auth/components/register-form";
+import { RegisterHero } from "@/features/auth/components/register-hero";
 
 export const metadata: Metadata = {
-  title: "Kayıt Ol | Adisyo",
+  title: "Kayıt Ol",
   description: "Adisyo'ya hemen kaydolun, 15 gün boyunca ücretsiz deneyin!",
 };
 
 export default function RegisterPage() {
-  return <RegisterView />;
+  return (
+    <AuthLayout aside={<RegisterHero />}>
+      <RegisterForm />
+    </AuthLayout>
+  );
 }
