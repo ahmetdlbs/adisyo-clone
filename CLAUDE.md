@@ -17,7 +17,7 @@ src/
     shell/             AppShell, TopBar, NavDrawer.
   features/<name>/     A screen family: components/ (client UI), model/ (types, zod schemas, pure rules),
                        server/ (server-only code, Server Actions), hooks/, data/ (mocks). All screens are migrated to this
-                       structure; `src/components/` holds only `ui/`, `kit/`, `shell/` and `AdisyoLogo.tsx` now.
+                       structure; `src/components/` holds only `ui/`, `kit/`, `shell/` and `BrandLogo.tsx` now.
   hooks/               Shared hooks (useEntityDialog).
   config/              routes.ts (ROUTES), navigation.ts (drawer menu), demo-identity.ts
   lib/                 utils (cn), format (formatTRY), collection (upsertById/removeById), notify, env (server-only)
@@ -32,7 +32,7 @@ A screen is a `features/<name>/` package with a thin `page.tsx` in front of it, 
   `tests/lib/format.test.ts`), and import the code under test through the `@/...` alias, never a relative path.
 - New files are kebab-case (matching shadcn); components are PascalCase exports.
 - Pages stay Server Components; `"use client"` belongs on the interactive leaf. Every page exports `metadata` with just its own
-  name (`title: "KDV Oranları"`); the root layout's template adds " | Adisyo".
+  name (`title: "KDV Oranları"`); the root layout's template adds " | Adisyon Merkezi".
 - Providers sit as deep as possible (`PosProvider`/`ShellProvider` in `(app)/layout.tsx`, not the root).
 - Colour comes from semantic tokens only (`bg-primary`, `text-muted-foreground`, `bg-canvas`, `bg-section`, `bg-success`, ...), defined
   once in `src/app/globals.css`. No raw hex or `text-[#...]` in components.
@@ -53,7 +53,7 @@ A screen is a `features/<name>/` package with a thin `page.tsx` in front of it, 
 - Everything the POS knows is one `PosState` (areas, tables, categories, products, open orders, history). Rules are pure functions in
   `model/` (`order.ts`, `pos-state.ts`, `floor-plan.ts`, `menu.ts`, `stats.ts`) that throw `Error` with a Turkish message; screens call them
   through `usePosActions().change(...)` and show the message on the form field or as a toast.
-- The store (`store/pos-provider.tsx`) is `useSyncExternalStore` over `localStorage` key `adisyo.pos.v2`, zod-validated on read. The server
+- The store (`store/pos-provider.tsx`) is `useSyncExternalStore` over `localStorage` key `adisyon-merkezi.pos.v3`, zod-validated on read. The server
   snapshot is the seed, so hydration never mismatches. Time-dependent text uses `useNow()`, which is `null` until mounted.
 - Only cash may overpay (change is returned); a cancelled bill is kept in `history` with outcome `"cancelled"` so voids stay visible on the
   dashboard.

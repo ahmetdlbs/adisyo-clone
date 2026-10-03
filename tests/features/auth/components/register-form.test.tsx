@@ -29,7 +29,7 @@ describe("RegisterForm", () => {
   it("greets the visitor and links back to login", () => {
     setup();
 
-    expect(screen.getByRole("heading", { level: 1, name: "Adisyo'ya hoş geldiniz" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Adisyon Merkezi'ne hoş geldiniz" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Giriş Yap" })).toHaveAttribute("href", "/login");
   });
 

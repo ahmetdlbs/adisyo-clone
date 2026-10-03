@@ -5,7 +5,7 @@ import { RegisterHero } from "@/features/auth/components/register-hero";
 
 export const metadata: Metadata = {
   title: "Kayıt Ol",
-  description: "Adisyo'ya hemen kaydolun, 15 gün boyunca ücretsiz deneyin!",
+  description: "Adisyon Merkezi'ne hemen kaydolun, 15 gün boyunca ücretsiz deneyin!",
 };
 
 export default function RegisterPage() {

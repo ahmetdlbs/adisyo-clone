@@ -29,7 +29,7 @@ describe("LoginForm", () => {
   it("greets the user and offers the other auth pages", () => {
     setup();
 
-    expect(screen.getByRole("heading", { level: 1, name: "Adisyo'ya hoş geldiniz" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Adisyon Merkezi'ne hoş geldiniz" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Şifremi unuttum" })).toHaveAttribute("href", "/forgot-password");
     expect(screen.getByRole("link", { name: /Şimdi Kaydolun/ })).toHaveAttribute("href", "/register");
   });

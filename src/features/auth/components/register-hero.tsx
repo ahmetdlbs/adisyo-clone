@@ -4,7 +4,7 @@ import Image from "next/image";
 export function RegisterHero() {
   return (
     <div className="relative hidden w-1/2 shrink-0 bg-muted lg:block">
-      <Image src="/images/register-hero.jpg" alt="Adisyo çevrimiçi siparişler" fill priority sizes="50vw" className="object-cover" />
+      <Image src="/images/register-hero.jpg" alt="Adisyon Merkezi çevrimiçi siparişler" fill priority sizes="50vw" className="object-cover" />
     </div>
   );
 }

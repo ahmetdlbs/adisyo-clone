@@ -17,10 +17,10 @@ export function AuthLayout({ children, aside = <TestimonialPanel /> }: AuthLayou
 
       <div className="flex w-full flex-col items-center overflow-auto">
         <header className="flex w-full items-center justify-between px-[30px] py-[10px] max-[865px]:px-5">
-          <a href="https://adisyo.com" target="_blank" rel="noopener noreferrer" className="block max-w-full">
+          <a href="https://adisyonmerkezi.com" target="_blank" rel="noopener noreferrer" className="block max-w-full">
             <Image
-              src="/images/login/logo-adisyo-yeni.svg"
-              alt="Adisyo"
+              src="/images/login/logo-mark.svg"
+              alt="Adisyon Merkezi"
               width={154}
               height={45}
               priority

@@ -36,51 +36,51 @@
    (bg-primary, text-muted-foreground, border-border, ...) and never raw hex. */
 :root {
   --background: #ffffff;
-  --foreground: #303030;
-  /* App canvas: the grey surface POS/dashboard cards sit on. */
-  --canvas: #edf0f5;
+  --foreground: #0f172a;
+  /* App canvas: the cool-slate surface POS/dashboard cards sit on. */
+  --canvas: #f1f5f9;
 
   --card: #ffffff;
-  --card-foreground: #303030;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #303030;
+  --popover-foreground: #0f172a;
 
-  /* Original Adisyo brand red (the colour every screen in the source design used). 4.98:1 against white. */
-  --primary: #d32f2f;
+  /* Adisyon Merkezi brand red. 5.9:1 against white. */
+  --primary: #dc2626;
   --primary-foreground: #ffffff;
-  --secondary: #f0f2f5;
-  --secondary-foreground: #303030;
-  --muted: #f0f2f5;
-  /* 6.0:1 on white, 5.4:1 on --muted. */
-  --muted-foreground: #5b6472;
-  --accent: #f3f4f6;
-  --accent-foreground: #303030;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  /* 4.8:1 on white. */
+  --muted-foreground: #64748b;
+  --accent: #e2e8f0;
+  --accent-foreground: #0f172a;
 
+  /* Same red as --primary: one brand colour, disambiguated by the tinted-vs-solid button treatment, not by hue. */
   --destructive: #dc2626;
-  /* Both pass 4.5:1 with white text. */
-  --success: #2e7d32;
+  --success: #15803d;
   --success-foreground: #ffffff;
   --warning: #b45309;
   --warning-foreground: #ffffff;
 
-  /* Icon tile in front of every definition screen's title (3:1 against white, as a graphic). */
-  --section: #e86c2e;
+  /* Icon tile in front of every definition screen's title. */
+  --section: #f97316;
   --section-foreground: #ffffff;
 
-  --border: #e5e7eb;
-  --input: #d8dde4;
-  --ring: #d32f2f;
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #dc2626;
 
-  --chart-1: #d32f2f;
-  --chart-2: #2f80c8;
-  --chart-3: #2e7d32;
-  --chart-4: #f2a93b;
-  --chart-5: #7e57c2;
-  /* Teal accent the original used specifically for the sales curve and the table-occupancy ring, kept apart
-     from the brand red so those two informational charts read as data, not as a call to action. */
+  --chart-1: #dc2626;
+  --chart-2: #2563eb;
+  --chart-3: #15803d;
+  --chart-4: #d97706;
+  --chart-5: #7c3aed;
+  /* Teal accent for the sales curve and the table-occupancy ring, kept apart from the brand red so those two
+     informational charts read as data, not as a call to action. */
   --chart-sales: #0d9488;
 
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 }
 
 @theme inline {

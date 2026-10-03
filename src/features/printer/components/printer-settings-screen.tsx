@@ -96,7 +96,7 @@ export function PrinterSettingsScreen() {
               <h2 className="border-b px-5 py-4 text-base font-semibold text-foreground">Keşfet</h2>
               <div className="flex flex-col gap-4 p-5">
                 <p className="text-[13px] leading-relaxed text-muted-foreground">
-                  Yazıcılarınızın kurulumu ve Adisyo programına tanıtılması adımlarını anlattığımız videoyu izlemek için aşağıdaki bağlantıları
+                  Yazıcılarınızın kurulumu ve Adisyon Merkezi programına tanıtılması adımlarını anlattığımız videoyu izlemek için aşağıdaki bağlantıları
                   kullanabilirsiniz.
                 </p>
                 <Button variant="outline" className="justify-between" onClick={notifyUnavailable}>
@@ -113,7 +113,7 @@ export function PrinterSettingsScreen() {
             <section className="rounded-lg border bg-card shadow-sm">
               <h2 className="border-b px-5 py-4 text-base font-semibold text-foreground">Kuruluma Başla</h2>
               <div className="flex flex-col gap-6 p-5">
-                <SetupStep number={1} title="Bulut Yazıcı Programını İndir" description="Bilgisayarınıza tanımlı yazıcılar ile Adisyo programı arasındaki iletişimi sağlar.">
+                <SetupStep number={1} title="Bulut Yazıcı Programını İndir" description="Bilgisayarınıza tanımlı yazıcılar ile Adisyon Merkezi programı arasındaki iletişimi sağlar.">
                   <Button className="w-full" onClick={notifyUnavailable}>
                     <Download />
                     Bulut Yazıcı Programını İndir

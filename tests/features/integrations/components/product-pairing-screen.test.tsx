@@ -13,7 +13,7 @@ describe("ProductPairingScreen", () => {
     render(<ProductPairingScreen />);
 
     expect(screen.getByRole("heading", { name: "Entegrasyon Ürünleri" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Adisyo Ürünler" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Adisyon Merkezi Ürünler" })).toBeInTheDocument();
     expect(screen.getByText("Bütün ürünler eşleştirilmiştir")).toBeInTheDocument();
   });
 

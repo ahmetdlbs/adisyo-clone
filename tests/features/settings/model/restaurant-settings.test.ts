@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { restaurantSettingsFormSchema } from "@/features/settings/model/restaurant-settings";
 
-const values = { name: "Adisyo Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: "0", firstOrderNumber: "101" };
+const values = { name: "Adisyon Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: "0", firstOrderNumber: "101" };
 
 describe("restaurantSettingsFormSchema", () => {
   it("accepts a filled-in form", () => {
     const result = restaurantSettingsFormSchema.parse(values);
 
-    expect(result).toMatchObject({ name: "Adisyo Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: 0, firstOrderNumber: 101 });
+    expect(result).toMatchObject({ name: "Adisyon Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: 0, firstOrderNumber: 101 });
   });
 
   it("needs a restaurant name", () => {

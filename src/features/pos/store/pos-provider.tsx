@@ -16,9 +16,8 @@ import {
 import { createPersistedStore, type StorageLike, type Store } from "./persisted-store";
 import { parsePosState } from "./pos-schema";
 
-// v2: the seed now ships today's trading history so the dashboard and reports are never empty on first load;
-// bumping the key drops any v1 browser state that predates that (a v1 key would otherwise stay stuck empty).
-const STORAGE_KEY = "adisyo.pos.v2";
+// v3: renamed for the Adisyon Merkezi rebrand; the key change also drops any pre-rebrand browser state.
+const STORAGE_KEY = "adisyon-merkezi.pos.v3";
 
 export function createPosStore(options: { initial?: PosState; storage?: StorageLike | null } = {}): Store<PosState> {
   return createPersistedStore({

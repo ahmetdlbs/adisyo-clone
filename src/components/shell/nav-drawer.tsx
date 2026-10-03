@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut } from "lucide-react";
-import AdisyoLogo from "@/components/AdisyoLogo";
+import BrandLogo from "@/components/BrandLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -29,7 +29,7 @@ export function NavDrawer({ open, onOpenChange }: NavDrawerProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-72 max-w-[85vw] gap-0 p-0 sm:max-w-72">
         <SheetHeader className="flex-row items-center gap-2 border-b p-4">
-          <AdisyoLogo size="sm" />
+          <BrandLogo size="sm" />
           <span className="text-[11px] text-muted-foreground">3.0</span>
           <SheetTitle className="sr-only">Menü</SheetTitle>
         </SheetHeader>

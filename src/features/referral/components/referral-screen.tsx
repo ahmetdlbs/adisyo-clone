@@ -30,7 +30,7 @@ const STEPS = [
 const DEFAULT_STATS: ReferralStats = { clicks: 0, signups: 0, rewardMonths: 0 };
 
 export function ReferralScreen({ referralCode, stats = DEFAULT_STATS, copyToClipboard = defaultCopyToClipboard }: ReferralScreenProps) {
-  const referralLink = `https://adisyo.com/tr/kayit?ref=${referralCode}`;
+  const referralLink = `https://adisyonmerkezi.com/tr/kayit?ref=${referralCode}`;
 
   const copyLink = async () => {
     try {
@@ -49,7 +49,7 @@ export function ReferralScreen({ referralCode, stats = DEFAULT_STATS, copyToClip
         </div>
         <h1 className="mt-6 text-2xl font-bold">Tavsiye Et ve Kazan!</h1>
         <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-primary-foreground/90">
-          Adisyo&apos;yu çevrenizdeki işletmelere tavsiye edin, onların da işlerini kolaylaştırmasını sağlayın. Sizin referansınızla kayıt olan her
+          Adisyon Merkezi&apos;ni çevrenizdeki işletmelere tavsiye edin, onların da işlerini kolaylaştırmasını sağlayın. Sizin referansınızla kayıt olan her
           yeni işletme için ekstra kullanım süresi ve sürpriz ödüller kazanın!
         </p>
       </div>

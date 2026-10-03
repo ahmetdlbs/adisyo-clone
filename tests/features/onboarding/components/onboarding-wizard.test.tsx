@@ -71,7 +71,7 @@ describe("OnboardingWizard", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Harika! Her Şey Hazır" })).toBeInTheDocument();
     expect(screen.getByText("3/3")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Adisyo'ya Git/ }));
+    await user.click(screen.getByRole("button", { name: /Adisyon Merkezi'ne Git/ }));
 
     expect(push).toHaveBeenCalledWith("/dashboard");
   });

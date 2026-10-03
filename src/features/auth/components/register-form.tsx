@@ -37,7 +37,7 @@ export function RegisterForm() {
 
   return (
     <div>
-      <h1 className="text-[26px] font-semibold">Adisyo&apos;ya hoş geldiniz</h1>
+      <h1 className="text-[26px] font-semibold">Adisyon Merkezi&apos;ne hoş geldiniz</h1>
       <p className="mt-2 mb-8 text-muted-foreground">Hemen kaydolun, 15 Gün boyunca ücretsiz deneyin!</p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} noValidate>

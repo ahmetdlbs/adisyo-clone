@@ -53,7 +53,7 @@ export function UserFormDialog({ open, onOpenChange, onSave }: UserFormDialogPro
         control={form.control}
         name="blockLogin"
         label="Kullanıcı Girişi Engellensin"
-        description="Aktif durumda iken kullanıcı Adisyo'ya giriş yapamaz."
+        description="Aktif durumda iken kullanıcı Adisyon Merkezi'ne giriş yapamaz."
       />
       <SwitchField
         control={form.control}

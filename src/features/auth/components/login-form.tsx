@@ -24,7 +24,7 @@ export function LoginForm({ next }: LoginFormProps) {
 
   return (
     <div>
-      <h1 className="text-[21px] leading-[30px]">Adisyo&apos;ya hoş geldiniz</h1>
+      <h1 className="text-[21px] leading-[30px]">Adisyon Merkezi&apos;ne hoş geldiniz</h1>
       <p className="mt-2.5 mb-6 text-muted-foreground">Lütfen üyelik bilgileriniz ile giriş yapınız</p>
 
       {/* The action is a Server Action, so the form also submits without JavaScript. */}

@@ -4,7 +4,7 @@ import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-f
 
 export const metadata: Metadata = {
   title: "Şifremi Unuttum",
-  description: "Adisyo şifrenizi sıfırlayın.",
+  description: "Adisyon Merkezi şifrenizi sıfırlayın.",
 };
 
 export default function ForgotPasswordPage() {

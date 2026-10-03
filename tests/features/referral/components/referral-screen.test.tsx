@@ -16,7 +16,7 @@ describe("ReferralScreen", () => {
     render(<ReferralScreen referralCode="AHMET123" />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Tavsiye Et ve Kazan!" })).toBeInTheDocument();
-    expect(screen.getByText("https://adisyo.com/tr/kayit?ref=AHMET123")).toBeInTheDocument();
+    expect(screen.getByText("https://adisyonmerkezi.com/tr/kayit?ref=AHMET123")).toBeInTheDocument();
   });
 
   it("copies the link to the clipboard and confirms it", async () => {
@@ -26,7 +26,7 @@ describe("ReferralScreen", () => {
 
     await user.click(screen.getByRole("button", { name: "Bağlantıyı Kopyala" }));
 
-    expect(copyToClipboard).toHaveBeenCalledWith("https://adisyo.com/tr/kayit?ref=AHMET123");
+    expect(copyToClipboard).toHaveBeenCalledWith("https://adisyonmerkezi.com/tr/kayit?ref=AHMET123");
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Bağlantı kopyalandı"));
   });
 

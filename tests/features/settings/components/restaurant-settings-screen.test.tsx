@@ -12,14 +12,14 @@ beforeEach(() => {
   toast.info.mockClear();
 });
 
-const defaults = { name: "Adisyo Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: "0", firstOrderNumber: "101" };
+const defaults = { name: "Adisyon Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: "0", firstOrderNumber: "101" };
 
 describe("RestaurantSettingsScreen", () => {
   it("shows the settings form pre-filled", () => {
     render(<RestaurantSettingsScreen initialSettings={defaults} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Restaurant Tanımlamaları" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /Restaurant Adı/ })).toHaveValue("Adisyo Cafe");
+    expect(screen.getByRole("textbox", { name: /Restaurant Adı/ })).toHaveValue("Adisyon Cafe");
   });
 
   it("saves the settings", async () => {
@@ -48,7 +48,7 @@ describe("RestaurantSettingsScreen", () => {
     await user.click(screen.getByRole("tab", { name: "Ödeme Tipleri" }));
 
     expect(screen.getByRole("tab", { name: "Ödeme Tipleri", selected: true })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /Restaurant Adı/ })).toHaveValue("Adisyo Cafe");
+    expect(screen.getByRole("textbox", { name: /Restaurant Adı/ })).toHaveValue("Adisyon Cafe");
   });
 
   it("says the remaining actions are not available yet", async () => {

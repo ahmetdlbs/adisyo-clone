@@ -35,7 +35,7 @@ const MENU: readonly (readonly [string, string, string, number, boolean?])[] = [
   ["p-waffle", "Meyveli Waffle", "c-tatli", 210],
   ["p-karisik-pizza", "Karışık Pizza (Orta)", "c-yiyecekler", 290],
   ["p-margarita", "Margherita Pizza", "c-yiyecekler", 245],
-  ["p-burger", "Adisyo Cheeseburger Menü", "c-yiyecekler", 265],
+  ["p-burger", "Adisyon Cheeseburger Menü", "c-yiyecekler", 265],
   ["p-tavuk-salata", "Izgara Tavuklu Salata", "c-yiyecekler", 210],
   ["p-tost", "Kaşarlı Karışık Tost", "c-yiyecekler", 135],
   ["p-makarna", "Penne Arabbiata", "c-yiyecekler", 225],

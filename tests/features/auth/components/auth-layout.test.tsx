@@ -12,7 +12,7 @@ describe("AuthLayout", () => {
 
     expect(screen.getByText("Form içeriği")).toBeInTheDocument();
     expect(screen.getByText("Yan panel")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Adisyo" })).toHaveAttribute("href", "https://adisyo.com");
+    expect(screen.getByRole("link", { name: "Adisyon Merkezi" })).toHaveAttribute("href", "https://adisyonmerkezi.com");
     expect(screen.getByRole("button", { name: "Destek İste" })).toBeInTheDocument();
   });
 
@@ -23,7 +23,7 @@ describe("AuthLayout", () => {
       </AuthLayout>
     );
 
-    const link = screen.getByRole("link", { name: "Adisyo" });
+    const link = screen.getByRole("link", { name: "Adisyon Merkezi" });
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });

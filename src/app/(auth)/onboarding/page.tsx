@@ -3,7 +3,7 @@ import { OnboardingWizard } from "@/features/onboarding/components/onboarding-wi
 
 export const metadata: Metadata = {
   title: "Kurulum Sihirbazı",
-  description: "Adisyo kurulumunuzu tamamlayın.",
+  description: "Adisyon Merkezi kurulumunuzu tamamlayın.",
 };
 
 export default function OnboardingPage() {

@@ -12,7 +12,7 @@ const quicksand = Quicksand({
 
 export const metadata: Metadata = {
   // Pages set only their own name ("KDV Oranları"); the template adds the product.
-  title: { default: "Adisyo", template: "%s | Adisyo" },
+  title: { default: "Adisyon Merkezi", template: "%s | Adisyon Merkezi" },
   robots: { index: false, follow: false },
   other: { google: "notranslate" },
   icons: {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#d32f2f",
+  themeColor: "#dc2626",
 };
 
 export default function RootLayout({

@@ -25,8 +25,8 @@ export function WastageProductReportScreen() {
         <div className="ml-9 flex flex-col gap-6 text-[15px] leading-relaxed text-foreground">
           <p>
             Fire modülü ile ilgili ücretlendirme ve detaylı bilgi için{" "}
-            <a href="mailto:info@adisyo.com" className="text-primary hover:underline">
-              info@adisyo.com
+            <a href="mailto:info@adisyonmerkezi.com" className="text-primary hover:underline">
+              info@adisyonmerkezi.com
             </a>{" "}
             adresine yazabilir veya{" "}
             <a href="tel:02167060624" className="text-primary hover:underline">

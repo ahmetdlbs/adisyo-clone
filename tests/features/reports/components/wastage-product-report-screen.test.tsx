@@ -7,6 +7,6 @@ describe("WastageProductReportScreen", () => {
     render(<WastageProductReportScreen />);
 
     expect(screen.getByRole("heading", { name: "Fire Tanımı Nedir?" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "info@adisyo.com" })).toHaveAttribute("href", "mailto:info@adisyo.com");
+    expect(screen.getByRole("link", { name: "info@adisyonmerkezi.com" })).toHaveAttribute("href", "mailto:info@adisyonmerkezi.com");
   });
 });

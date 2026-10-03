@@ -23,7 +23,7 @@ import {
 const STEP_DESCRIPTIONS: Record<number, string> = {
   1: "Sipariş süreçlerinizi hızlandırmak için aşağıdaki bilgilere ihtiyacımız var",
   2: "Seçtiğiniz çalışma tiplerine göre süreçleri yapılandıralım",
-  3: "Adisyo hesabınız başarıyla yapılandırıldı! Artık işletmenizi yönetmeye başlayabilirsiniz.",
+  3: "Adisyon Merkezi hesabınız başarıyla yapılandırıldı! Artık işletmenizi yönetmeye başlayabilirsiniz.",
 };
 
 const LAST_STEP = ONBOARDING_STEPS.length;
@@ -41,7 +41,7 @@ export function OnboardingWizard() {
   return (
     <div className="flex min-h-screen bg-canvas">
       <aside className="fixed top-0 left-0 flex h-screen w-[280px] flex-col items-center gap-10 bg-section py-12">
-        <span className="text-2xl font-extrabold tracking-tight text-foreground">adisyo</span>
+        <span className="text-xl font-extrabold tracking-tight text-foreground">Adisyon Merkezi</span>
 
         <div className="relative size-28">
           <svg viewBox="0 0 36 36" className="size-full -rotate-90">
@@ -110,7 +110,7 @@ export function OnboardingWizard() {
               </Button>
             ) : (
               <Button size="xl" className="rounded-full px-10" onClick={() => router.push(ROUTES.dashboard)}>
-                Adisyo&apos;ya Git
+                Adisyon Merkezi&apos;ne Git
               </Button>
             )}
           </div>

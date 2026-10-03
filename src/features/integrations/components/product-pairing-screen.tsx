@@ -116,9 +116,9 @@ export function ProductPairingScreen() {
       </section>
 
       <section className="flex min-h-[500px] flex-1 flex-col rounded border bg-card shadow-sm">
-        <PageHeader className="border-b p-5" icon={List} title="Adisyo Ürünler" description="Adisyo Ürün Listesi" />
+        <PageHeader className="border-b p-5" icon={List} title="Adisyon Merkezi Ürünler" description="Adisyon Merkezi Ürün Listesi" />
         <div className="flex flex-col gap-5 p-5">
-          <SearchInput value={adisyoQuery} onValueChange={setAdisyoQuery} placeholder="Arama" aria-label="Adisyo ürünü ara" />
+          <SearchInput value={adisyoQuery} onValueChange={setAdisyoQuery} placeholder="Arama" aria-label="Adisyon Merkezi ürünü ara" />
           <Field orientation="horizontal" className="items-center border-b pb-3">
             <Checkbox id="paired-adisyo" checked={showPairedAdisyo} onCheckedChange={(checked) => setShowPairedAdisyo(checked === true)} />
             <FieldLabel htmlFor="paired-adisyo">Eşleştirilmiş Ürünleri Göster</FieldLabel>
