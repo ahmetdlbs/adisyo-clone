@@ -1,5 +1,7 @@
 import type { Order, OrderLine, Payment, PaymentMethod } from "@/features/pos/model/order";
-import type { ClosedOrder, PosState } from "@/features/pos/model/pos-state";
+import type { Product } from "@/features/pos/model/pos-state";
+import type { DaySummary, HourlySales } from "@/features/pos/model/stats";
+import type { PosSnapshot } from "@/features/pos/store/pos-provider";
 
 export const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -7,7 +9,7 @@ export const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 6
  * A small restaurant for screen tests. Masa 1 has an open bill: 2 × Çay (52,00) + 1 × Coca Cola (105,00) = 209,00.
  * Salon has Masa 1 and Masa 2; "bölge 2" has Bahçe 1.
  */
-export function buildPosState(): PosState {
+export function buildPosSnapshot(): PosSnapshot {
   const bill: Order = {
     id: "o1",
     number: 1,
@@ -17,9 +19,11 @@ export function buildPosState(): PosState {
     waiter: "Ahmet",
     openedAt: minutesAgo(260),
     stage: "preparing",
+    status: "open",
+    closedAt: null,
     lines: [
-      { id: "l1", productId: "p-cay", name: "Çay", unitPrice: 5200, quantity: 2, isComplimentary: false },
-      { id: "l2", productId: "p-kola", name: "Coca Cola", unitPrice: 10500, quantity: 1, isComplimentary: false },
+      { id: "l1", productId: "p-cay", portionId: "po-cay", name: "Çay", unitPrice: 5200, quantity: 2, isComplimentary: false },
+      { id: "l2", productId: "p-kola", portionId: "po-kola", name: "Coca Cola", unitPrice: 10500, quantity: 1, isComplimentary: false },
     ],
     discountPercent: 0,
     payments: [],
@@ -40,13 +44,41 @@ export function buildPosState(): PosState {
       { id: "c2", name: "Tatlılar" },
     ],
     products: [
-      { id: "p-cay", name: "Çay", categoryId: "c1", price: 5200, isFavorite: true },
-      { id: "p-kola", name: "Coca Cola", categoryId: "c1", price: 10500, isFavorite: false },
-      { id: "p-cheese", name: "Cheesecake", categoryId: "c2", price: 19500, isFavorite: false },
+      productFixture("p-cay", "Çay", "c1", 5200, true),
+      productFixture("p-kola", "Coca Cola", "c1", 10500, false),
+      productFixture("p-cheese", "Cheesecake", "c2", 19500, false),
     ],
     orders: [bill],
-    history: [],
-    nextOrderNumber: 2,
+  };
+}
+
+/** One product with a single default "Tam" portion priced the same across every order channel. */
+export function productFixture(id: string, name: string, categoryId: string, price: number, isFavorite = false): Product {
+  return {
+    id,
+    name,
+    categoryId,
+    isFavorite,
+    showOnSalesScreen: true,
+    showOnKitchenScreen: true,
+    vatExcluded: false,
+    autoAskFeaturePortion: false,
+    useRecipe: false,
+    trackStock: false,
+    isCombo: false,
+    portions: [
+      {
+        id: `po-${id.replace(/^p-/, "")}`,
+        name: "Tam",
+        isDefault: true,
+        tablePrice: price,
+        takeawayPrice: price,
+        deliveryPrice: price,
+        recipeLines: [],
+      },
+    ],
+    featureGroupIds: [],
+    comboItems: [],
   };
 }
 
@@ -56,6 +88,7 @@ export const localTime = (hour: number, minute = 0, day = 21) => new Date(2026, 
 export const billLine = (id: string, unitPrice: number, quantity = 1): OrderLine => ({
   id,
   productId: `p-${id}`,
+  portionId: `po-${id}`,
   name: id,
   unitPrice,
   quantity,
@@ -70,37 +103,23 @@ export const billPayment = (method: PaymentMethod, amount: number, paidAt: Date)
   lineIds: [],
 });
 
-interface ClosedOrderOptions {
-  id?: string;
-  closedAt: Date;
-  lines?: OrderLine[];
-  discountPercent?: number;
-  /** Defaults to one cash payment for exactly the total. */
-  payments?: Payment[];
-  outcome?: ClosedOrder["outcome"];
-}
+const EMPTY_HOURS: readonly HourlySales[] = Array.from({ length: 24 }, (_, hour) => ({ hour, amount: 0 }));
 
-/** A bill that left the floor: paid in cash for its whole total unless told otherwise. */
-export function buildClosedOrder({
-  id = "o",
-  closedAt,
-  lines = [billLine("a", 10000)],
-  discountPercent = 0,
-  payments,
-  outcome = "paid",
-}: ClosedOrderOptions): ClosedOrder {
-  const total = Math.round(lines.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0) * (1 - discountPercent / 100));
-  const order: Order = {
-    id,
-    number: 1,
-    type: "table",
-    tableId: "t1",
-    waiter: "ahmet",
-    openedAt: closedAt.toISOString(),
-    stage: "preparing",
-    lines,
-    discountPercent,
-    payments: payments ?? [billPayment("cash", total, closedAt)],
+/** What api/'s /reports/day-summary returns on a day nothing was sold, unless overridden. */
+export function buildDaySummary(overrides: Partial<DaySummary> = {}): DaySummary {
+  return {
+    paidCount: 0,
+    salesTotal: 0,
+    averageBill: 0,
+    cancelledCount: 0,
+    cancelledTotal: 0,
+    byMethod: [],
+    byHour: EMPTY_HOURS,
+    peakHour: null,
+    expenseTotal: 0,
+    wastageTotal: 0,
+    costOfGoods: 0,
+    stockValue: 0,
+    ...overrides,
   };
-  return { order, outcome, closedAt: closedAt.toISOString() };
 }

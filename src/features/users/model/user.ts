@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isPhoneNumber, nationalNumber } from "@/lib/phone";
+import { isPhoneNumber } from "@/lib/phone";
 
 export const USER_ROLES = ["Yönetici", "Kasiyer", "Garson"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
@@ -38,15 +38,6 @@ export const userFormSchema = z.object({
   usePin: z.boolean(),
 });
 export type UserFormValues = z.infer<typeof userFormSchema>;
-
-/** Adds a user with the number after the highest in use. Throws an Error when the phone number is already taken. */
-export function saveUser(users: readonly User[], values: UserFormValues, newId: () => string): readonly User[] {
-  if (users.some((user) => nationalNumber(user.phone) === nationalNumber(values.phone))) {
-    throw new Error("Bu telefon numarası başka bir kullanıcıda kayıtlı");
-  }
-  const no = Math.max(0, ...users.map((user) => user.no)) + 1;
-  return [...users, { id: newId(), no, ...values, lastLogin: null }];
-}
 
 /** What a search box looks through. */
 export const userSearchText = (user: User): string => `${user.name} ${user.email} ${user.phone} ${user.role}`;

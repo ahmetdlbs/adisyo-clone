@@ -13,6 +13,7 @@ import {
   type RestaurantSettingsFormInput,
   type RestaurantSettingsFormValues,
 } from "../model/restaurant-settings";
+import { updateRestaurantSettings } from "../server/actions";
 
 const TABS = ["Genel Ayarlar", "Ödeme Tipleri", "Parametreler", "Döviz Ayarları", "Adres Bilgileri", "Entegrasyon"] as const;
 const NOTIFICATION_SOUND_OPTIONS = [
@@ -34,7 +35,14 @@ export function RestaurantSettingsScreen({ initialSettings }: RestaurantSettings
     defaultValues: initialSettings,
   });
 
-  const submit = form.handleSubmit(() => toast.success("Ayarlar güncellendi"));
+  const submit = form.handleSubmit(async (values) => {
+    try {
+      await updateRestaurantSettings(values);
+      toast.success("Ayarlar güncellendi");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ayarlar güncellenemedi");
+    }
+  });
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 overflow-auto p-6">

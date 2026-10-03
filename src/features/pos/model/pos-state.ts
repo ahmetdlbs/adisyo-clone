@@ -1,5 +1,5 @@
 import type { Kurus } from "@/lib/money";
-import { canClose, remaining, type Order, type OrderType } from "./order";
+import { remaining, type Order, type OrderType } from "./order";
 
 export interface Area {
   id: string;
@@ -20,145 +20,98 @@ export interface Category {
   name: string;
 }
 
+/** One stock item ("Stok Kartı") a portion's sale consumes, and how much of it. */
+export interface RecipeLine {
+  stockItemId: string;
+  quantity: number;
+}
+
+/** A sellable unit of a product ("Tam", "Yarım", ...), priced separately per order channel. */
+export interface Portion {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  tablePrice: Kurus;
+  takeawayPrice: Kurus;
+  deliveryPrice: Kurus;
+  unitId?: string;
+  /** Maliyet Tutarı, kuruş. */
+  costAmount?: Kurus;
+  /** Raw materials this portion's sale consumes; empty unless the product's useRecipe/trackStock is on. */
+  recipeLines: readonly RecipeLine[];
+}
+
+/** One bundled line inside a combo product ("Menü Tanımla"): which product+portion, and how many. */
+export interface ComboItem {
+  productId: string;
+  portionId: string;
+  /** "Product (Portion)" as it read when this line was saved — survives the product/portion being renamed. */
+  name: string;
+  quantity: number;
+}
+
 export interface Product {
   id: string;
   name: string;
   categoryId: string;
-  price: Kurus;
+  /** Hex color for the tile in the order screen's menu panel. */
+  color?: string;
   barcode?: string;
+  productCode?: string;
   isFavorite: boolean;
+  showOnSalesScreen: boolean;
+  showOnKitchenScreen: boolean;
+  vatExcluded: boolean;
+  autoAskFeaturePortion: boolean;
+  /** "Reçeteli ürün kullan": each portion may list several raw materials it consumes. */
+  useRecipe: boolean;
+  /** "Stok takibi yap": simpler than useRecipe — each portion maps to at most one stock item, 1-for-1. */
+  trackStock: boolean;
+  /** "Menü Tanımla": this product is a combo bundling the products in comboItems, at its own portion price. */
+  isCombo: boolean;
+  vatDefinitionId?: string;
+  kitchenGroupId?: string;
+  courseGroupId?: string;
+  portions: readonly Portion[];
+  featureGroupIds: readonly string[];
+  comboItems: readonly ComboItem[];
 }
 
-/** An order that left the floor: paid in full, or cancelled. Cancelled orders are kept so voids stay auditable. */
-export interface ClosedOrder {
-  order: Order;
-  outcome: "paid" | "cancelled";
-  closedAt: string;
+/** The portion that is added when nothing else is specified: the one flagged default, else the first. */
+export function defaultPortion(product: Pick<Product, "portions">): Portion | undefined {
+  return product.portions.find((portion) => portion.isDefault) ?? product.portions[0];
 }
 
-/** Everything the POS knows: the menu and floor plan, the open orders and the finished ones. */
-export interface PosState {
-  areas: readonly Area[];
+/** Real POS pricing varies by where the order came from — dine-in, takeaway or a delivery commission. */
+export function portionPrice(portion: Portion, type: OrderType): Kurus {
+  if (type === "takeaway") return portion.takeawayPrice;
+  if (type === "delivery") return portion.deliveryPrice;
+  return portion.tablePrice;
+}
+
+/**
+ * The slice of the live POS snapshot (`store/pos-provider.tsx`) these read-only helpers need. Kept narrow
+ * so they work whether the caller has the whole snapshot or just these two pieces of it.
+ */
+export interface FloorAndOrders {
   tables: readonly TableDefinition[];
-  categories: readonly Category[];
-  products: readonly Product[];
   orders: readonly Order[];
-  history: readonly ClosedOrder[];
-  nextOrderNumber: number;
 }
 
-export const createEmptyPosState = (): PosState => ({
-  areas: [],
-  tables: [],
-  categories: [],
-  products: [],
-  orders: [],
-  history: [],
-  nextOrderNumber: 1,
-});
-
-// ── Reading ─────────────────────────────────────────────────────────────────
-
-export const orderForTable = (state: PosState, tableId: string): Order | undefined =>
+export const orderForTable = (state: FloorAndOrders, tableId: string): Order | undefined =>
   state.orders.find((order) => order.type === "table" && order.tableId === tableId);
 
 /** What the order is called on screen: its table, or a fixed name for takeaway and delivery. */
-export function orderTitle(state: PosState, order: Order): string {
+export function orderTitle(state: FloorAndOrders, order: Order): string {
   if (order.type === "takeaway") return "Gel Al Sipariş";
   if (order.type === "delivery") return "Paket Sipariş";
   return state.tables.find((table) => table.id === order.tableId)?.name ?? "Silinmiş masa";
 }
 
 /** A table is occupied once something is on its bill; an order that was just opened does not count. */
-export const isTableOccupied = (state: PosState, tableId: string): boolean =>
+export const isTableOccupied = (state: FloorAndOrders, tableId: string): boolean =>
   (orderForTable(state, tableId)?.lines.length ?? 0) > 0;
 
 /** What is still to be collected across every open order. */
-export const openOrderTotal = (state: PosState): Kurus => state.orders.reduce((sum, order) => sum + remaining(order), 0);
-
-// ── Changing ────────────────────────────────────────────────────────────────
-
-const isEmpty = (order: Order) => order.lines.length === 0 && order.payments.length === 0;
-
-function findOrder(state: PosState, orderId: string): Order {
-  const order = state.orders.find((candidate) => candidate.id === orderId);
-  if (!order) throw new Error("Sipariş bulunamadı");
-  return order;
-}
-
-const withoutOrder = (state: PosState, orderId: string) => state.orders.filter((order) => order.id !== orderId);
-
-export interface NewOrder {
-  id: string;
-  type: OrderType;
-  tableId: string | null;
-  customerName?: string;
-  waiter: string;
-  now: Date;
-}
-
-export function createOrder(state: PosState, input: NewOrder): PosState {
-  if (input.type === "table") {
-    if (input.tableId === null) throw new Error("Masa siparişi için masa gerekli");
-    if (!state.tables.some((table) => table.id === input.tableId)) throw new Error("Masa bulunamadı");
-    if (orderForTable(state, input.tableId)) throw new Error("Bu masada açık sipariş var");
-  }
-
-  const order: Order = {
-    id: input.id,
-    number: state.nextOrderNumber,
-    type: input.type,
-    tableId: input.type === "table" ? input.tableId : null,
-    ...(input.customerName ? { customerName: input.customerName } : {}),
-    waiter: input.waiter,
-    openedAt: input.now.toISOString(),
-    stage: "preparing",
-    lines: [],
-    discountPercent: 0,
-    payments: [],
-  };
-  return { ...state, orders: [...state.orders, order], nextOrderNumber: state.nextOrderNumber + 1 };
-}
-
-/**
- * Applies `updater` to one order. An order emptied by it stays open, so a bill can be refilled after its last
- * item is taken off; it already shows as a free table. Leaving the screen cleans up via {@link discardEmptyOrder}.
- */
-export function updateOrder(state: PosState, orderId: string, updater: (order: Order) => Order): PosState {
-  const next = updater(findOrder(state, orderId));
-  return { ...state, orders: state.orders.map((order) => (order.id === orderId ? next : order)) };
-}
-
-/** Moves a fully settled order to the history. Refuses while an amount is still due. */
-export function closeOrder(state: PosState, orderId: string, now: Date): PosState {
-  const order = findOrder(state, orderId);
-  if (!canClose(order)) throw new Error("Ödenecek tutar var");
-  return {
-    ...state,
-    orders: withoutOrder(state, orderId),
-    history: [...state.history, { order, outcome: "paid", closedAt: now.toISOString() }],
-  };
-}
-
-export function cancelOrder(state: PosState, orderId: string, now: Date): PosState {
-  const order = findOrder(state, orderId);
-  return {
-    ...state,
-    orders: withoutOrder(state, orderId),
-    history: [...state.history, { order, outcome: "cancelled", closedAt: now.toISOString() }],
-  };
-}
-
-/** Drops an order nothing was ever added to (someone opened it and walked away). */
-export function discardEmptyOrder(state: PosState, orderId: string): PosState {
-  const order = state.orders.find((candidate) => candidate.id === orderId);
-  return order && isEmpty(order) ? { ...state, orders: withoutOrder(state, orderId) } : state;
-}
-
-export function moveOrderToTable(state: PosState, orderId: string, tableId: string): PosState {
-  const order = findOrder(state, orderId);
-  if (order.type !== "table") throw new Error("Yalnızca masa siparişi taşınabilir");
-  if (!state.tables.some((table) => table.id === tableId)) throw new Error("Masa bulunamadı");
-  if (orderForTable(state, tableId)) throw new Error("Hedef masada açık sipariş var");
-  return { ...state, orders: state.orders.map((candidate) => (candidate.id === orderId ? { ...candidate, tableId } : candidate)) };
-}
+export const openOrderTotal = (state: Pick<FloorAndOrders, "orders">): Kurus =>
+  state.orders.reduce((sum, order) => sum + remaining(order), 0);

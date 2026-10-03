@@ -18,7 +18,7 @@ interface BulkTablesDialogProps {
   defaultAreaId: string;
   onOpenChange: (open: boolean) => void;
   /** Throw an Error to reject; its message is shown on the name field. */
-  onSave: (values: BulkTablesFormValues) => void;
+  onSave: (values: BulkTablesFormValues) => Promise<void>;
 }
 
 /** Adds several numbered tables at once ("Masa 4", "Masa 5", ...). Mount with a new `key` per opening. */
@@ -28,9 +28,9 @@ export function BulkTablesDialog({ open, areas, defaultAreaId, onOpenChange, onS
     defaultValues: { prefix: "Masa", count: "5", areaId: defaultAreaId, shape: "square" },
   });
 
-  const submit = form.handleSubmit((values) => {
+  const submit = form.handleSubmit(async (values) => {
     try {
-      onSave(values);
+      await onSave(values);
     } catch (error) {
       form.setError("prefix", { message: error instanceof Error ? error.message : "Kaydedilemedi" });
     }
@@ -43,6 +43,7 @@ export function BulkTablesDialog({ open, areas, defaultAreaId, onOpenChange, onS
       title="Toplu Masa Ekleme"
       description="Adı ve adedi girin; masalar mevcut numaradan sonra numaralanır."
       submitLabel="Kaydet"
+      isSubmitting={form.formState.isSubmitting}
       onSubmit={submit}
     >
       <TextField control={form.control} name="prefix" label="Masa Adı" required autoFocus />

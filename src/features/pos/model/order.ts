@@ -7,6 +7,10 @@ export type OrderType = (typeof ORDER_TYPES)[number];
 export const ORDER_STAGES = ["preparing", "ready", "out_for_delivery"] as const;
 export type OrderStage = (typeof ORDER_STAGES)[number];
 
+/** Where an order is in its lifecycle. The live floor only ever holds "open" orders; reports read the rest. */
+export const ORDER_STATUSES = ["open", "paid", "cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
 export const PAYMENT_METHODS = ["cash", "card", "multinet", "smart_ticket", "setcard", "pluxee", "other", "on_account"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
@@ -24,6 +28,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 export interface OrderLine {
   id: string;
   productId: string;
+  portionId: string;
   name: string;
   /** Price when the line was added, so a later menu price change does not rewrite an open bill. */
   unitPrice: Kurus;
@@ -41,6 +46,15 @@ export interface Payment {
   lineIds: readonly string[];
 }
 
+/** A kuver / garsoniye on a bill, as it was defined when it was added. */
+export interface OrderCharge {
+  which: "kuver" | "garsoniye";
+  name: string;
+  kind: "amount" | "percent";
+  /** Kuruş for "amount", a whole percent of the discounted subtotal for "percent". */
+  amount: Kurus;
+}
+
 export interface Order {
   id: string;
   /** Adisyon number shown on the bill. */
@@ -51,9 +65,14 @@ export interface Order {
   waiter: string;
   openedAt: string;
   stage: OrderStage;
+  status: OrderStatus;
+  /** Set once the bill leaves the floor (paid or cancelled); null while open. */
+  closedAt: string | null;
   lines: readonly OrderLine[];
   discountPercent: number;
   payments: readonly Payment[];
+  /** Kuver / garsoniye applied to this bill; none when absent. */
+  charges?: readonly OrderCharge[];
 }
 
 export const LATE_AFTER_MINUTES = 15;
@@ -68,7 +87,13 @@ export const subtotal = (order: Order): Kurus => order.lines.reduce((sum, line) 
 
 export const discountAmount = (order: Order): Kurus => percentOf(subtotal(order), order.discountPercent);
 
-export const orderTotal = (order: Order): Kurus => subtotal(order) - discountAmount(order);
+/** What the bill's charges add: a fixed amount, or a percent of the subtotal after the discount. */
+export const chargeAmount = (order: Order, charge: OrderCharge): Kurus =>
+  charge.kind === "amount" ? charge.amount : percentOf(subtotal(order) - discountAmount(order), charge.amount);
+
+export const chargesTotal = (order: Order): Kurus => (order.charges ?? []).reduce((sum, charge) => sum + chargeAmount(order, charge), 0);
+
+export const orderTotal = (order: Order): Kurus => subtotal(order) - discountAmount(order) + chargesTotal(order);
 
 export const paidTotal = (order: Order): Kurus => order.payments.reduce((sum, payment) => sum + payment.amount, 0);
 
@@ -86,10 +111,18 @@ function assertLineEditable(order: Order, lineId: string) {
   if (isLineSettled(order, lineId)) throw new Error(SETTLED_LINE_MESSAGE);
 }
 
-/** Adds one of a product: raises the quantity of its open line, or starts a new line. */
-export function addProduct(order: Order, product: { id: string; name: string; price: Kurus }, newLineId: string): Order {
+/**
+ * Adds one of a product's portion: raises the quantity of its open line, or starts a new line. `portionId`
+ * defaults to the product's own id, which keeps single-portion callers (most fixtures) unchanged.
+ */
+export function addProduct(
+  order: Order,
+  product: { id: string; name: string; price: Kurus },
+  newLineId: string,
+  portionId: string = product.id
+): Order {
   const open = order.lines.find(
-    (line) => line.productId === product.id && !line.isComplimentary && !isLineSettled(order, line.id)
+    (line) => line.productId === product.id && line.portionId === portionId && !line.isComplimentary && !isLineSettled(order, line.id)
   );
 
   if (open) {
@@ -99,6 +132,7 @@ export function addProduct(order: Order, product: { id: string; name: string; pr
   const line: OrderLine = {
     id: newLineId,
     productId: product.id,
+    portionId,
     name: product.name,
     unitPrice: product.price,
     quantity: 1,
@@ -107,9 +141,11 @@ export function addProduct(order: Order, product: { id: string; name: string; pr
   return { ...order, lines: [...order.lines, line] };
 }
 
-/** Takes one of a product off; the line disappears at zero. A product not on the order is ignored. */
-export function decrementProduct(order: Order, productId: string): Order {
-  const candidates = order.lines.filter((line) => line.productId === productId && !line.isComplimentary);
+/** Takes one of a product's portion off; the line disappears at zero. A product not on the order is ignored. */
+export function decrementProduct(order: Order, productId: string, portionId?: string): Order {
+  const candidates = order.lines.filter(
+    (line) => line.productId === productId && (portionId === undefined || line.portionId === portionId) && !line.isComplimentary
+  );
   const editable = candidates.findLast((line) => !isLineSettled(order, line.id));
 
   if (!editable) {
@@ -137,9 +173,14 @@ export function toggleComplimentary(order: Order, lineId: string): Order {
   };
 }
 
-/** How many of a product are on the bill (complimentary portions are counted separately, so not here). */
-export const quantityOf = (order: Order, productId: string): number =>
-  order.lines.filter((line) => line.productId === productId && !line.isComplimentary).reduce((sum, line) => sum + line.quantity, 0);
+/**
+ * How many of a product are on the bill (complimentary lines are counted separately, so not here). With
+ * `portionId`, counts only that portion's lines; without it, sums every portion of the product.
+ */
+export const quantityOf = (order: Order, productId: string, portionId?: string): number =>
+  order.lines
+    .filter((line) => line.productId === productId && !line.isComplimentary && (portionId === undefined || line.portionId === portionId))
+    .reduce((sum, line) => sum + line.quantity, 0);
 
 /** Clears the bill. Lines that were already paid for stay, and so do the payments and the discount. */
 export const resetOrder = (order: Order): Order => ({ ...order, lines: order.lines.filter((line) => isLineSettled(order, line.id)) });
@@ -163,6 +204,8 @@ export interface PaymentRequest {
   /** What the customer handed over, in kuruş. */
   tendered: Kurus;
   lineIds?: readonly string[];
+  /** Veresiye only: the customer whose balance this payment is charged to. */
+  customerId?: string;
 }
 
 /**

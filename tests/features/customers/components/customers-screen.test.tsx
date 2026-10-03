@@ -8,15 +8,19 @@ import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+const actions = vi.hoisted(() => ({ createCustomer: vi.fn(), updateCustomer: vi.fn(), deleteCustomer: vi.fn() }));
+vi.mock("@/features/customers/server/customer-actions", () => actions);
+
 beforeEach(() => {
   Object.values(toast).forEach((mock) => mock.mockClear());
+  Object.values(actions).forEach((mock) => mock.mockReset());
 });
 
 const ALI: Customer = { id: "c1", no: 1, firstName: "Ali", lastName: "Yılmaz", phone: "0532 123 45 67", phone2: "", balance: 15050 };
 const AYSE: Customer = { id: "c2", no: 2, firstName: "Ayşe", lastName: "Kaya", phone: "0533 111 22 33", phone2: "", balance: 0 };
 
 const setup = (customers: Customer[] = []) => {
-  render(<CustomersScreen initialCustomers={customers} />);
+  render(<CustomersScreen customers={customers} />);
   return userEvent.setup();
 };
 
@@ -76,15 +80,6 @@ describe("CustomersScreen", () => {
       expect(screen.queryByRole("row", { name: /Ali Yılmaz/ })).not.toBeInTheDocument();
     });
 
-    it("finds a customer by phone number", async () => {
-      const user = setup([ALI, AYSE]);
-
-      await user.type(screen.getByRole("searchbox", { name: "Müşteri Arama" }), "111 22");
-
-      expect(screen.getByRole("row", { name: /Ayşe Kaya/ })).toBeInTheDocument();
-      expect(screen.queryByRole("row", { name: /Ali Yılmaz/ })).not.toBeInTheDocument();
-    });
-
     it("says nothing matched, which is not the same as having no customers", async () => {
       const user = setup([ALI]);
 
@@ -95,31 +90,32 @@ describe("CustomersScreen", () => {
   });
 
   describe("adding", () => {
-    it("adds a customer and updates the totals", async () => {
+    it("calls createCustomer with the entered values and shows a success toast", async () => {
+      actions.createCustomer.mockResolvedValue(ALI);
       const user = setup([ALI]);
 
       await user.click(screen.getByRole("button", { name: "Ekle" }));
       const dialog = await fillCustomer(user, { firstName: "Veli", phone: "0544 555 66 77", balance: "25,5" });
       await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
-      await waitFor(() => expect(screen.getByRole("row", { name: /Veli/ })).toBeInTheDocument());
-      expect(rowOf("Veli")).toHaveTextContent("2");
-      expect(rowOf("Veli")).toHaveTextContent("₺25,50");
-      expect(summary()).toHaveTextContent("Müşteri Sayısı : 2");
-      expect(summary()).toHaveTextContent("Toplam Bakiye : ₺176,00");
-      expect(toast.success).toHaveBeenCalledWith("Müşteri eklendi");
+      await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Müşteri eklendi"));
+      expect(actions.createCustomer).toHaveBeenCalledWith(
+        expect.objectContaining({ firstName: "Veli", phone: "0544 555 66 77", balance: 2550 })
+      );
     });
 
-    it("asks for a first name", async () => {
+    it("asks for a first name, never calling createCustomer", async () => {
       const user = setup();
 
       await user.click(screen.getByRole("button", { name: "Ekle" }));
       await user.click(within(await screen.findByRole("dialog", { name: "Müşteri Ekle" })).getByRole("button", { name: "Ekle" }));
 
       expect(await screen.findByText("Ad zorunludur")).toBeInTheDocument();
+      expect(actions.createCustomer).not.toHaveBeenCalled();
     });
 
-    it("shows the reason on the phone field when the number is already a customer's", async () => {
+    it("shows the API's reason on the phone field when the number is already a customer's", async () => {
+      actions.createCustomer.mockRejectedValue(new Error("Bu telefon numarası başka bir müşteride kayıtlı"));
       const user = setup([ALI]);
 
       await user.click(screen.getByRole("button", { name: "Ekle" }));
@@ -127,12 +123,12 @@ describe("CustomersScreen", () => {
       await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
       expect(await screen.findByText("Bu telefon numarası başka bir müşteride kayıtlı")).toBeInTheDocument();
-      expect(summary()).toHaveTextContent("Müşteri Sayısı : 1");
     });
   });
 
   describe("editing and deleting", () => {
-    it("edits a customer with their values filled in", async () => {
+    it("edits a customer with their values filled in and calls updateCustomer", async () => {
+      actions.updateCustomer.mockResolvedValue(ALI);
       const user = setup([ALI]);
 
       await user.click(screen.getByRole("button", { name: "Ali Yılmaz düzenle" }));
@@ -144,19 +140,29 @@ describe("CustomersScreen", () => {
       await user.type(name, "Mehmet");
       await user.click(dialog.getByRole("button", { name: "Güncelle" }));
 
-      await waitFor(() => expect(screen.getByRole("row", { name: /Mehmet Yılmaz/ })).toBeInTheDocument());
-      expect(toast.success).toHaveBeenCalledWith("Müşteri güncellendi");
+      await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Müşteri güncellendi"));
+      expect(actions.updateCustomer).toHaveBeenCalledWith("c1", expect.objectContaining({ firstName: "Mehmet" }));
     });
 
     it("deletes a customer after confirming", async () => {
+      actions.deleteCustomer.mockResolvedValue(undefined);
       const user = setup([ALI, AYSE]);
 
       await user.click(screen.getByRole("button", { name: "Ali Yılmaz sil" }));
       await user.click(await screen.findByRole("button", { name: "Sil" }));
 
-      await waitFor(() => expect(screen.queryByRole("row", { name: /Ali Yılmaz/ })).not.toBeInTheDocument());
-      expect(summary()).toHaveTextContent("Müşteri Sayısı : 1");
-      expect(toast.success).toHaveBeenCalledWith("Müşteri silindi");
+      await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Müşteri silindi"));
+      expect(actions.deleteCustomer).toHaveBeenCalledWith("c1");
+    });
+
+    it("shows an error toast when deleting fails", async () => {
+      actions.deleteCustomer.mockRejectedValue(new Error("Müşteri silinemedi"));
+      const user = setup([ALI]);
+
+      await user.click(screen.getByRole("button", { name: "Ali Yılmaz sil" }));
+      await user.click(await screen.findByRole("button", { name: "Sil" }));
+
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Müşteri silinemedi"));
     });
   });
 

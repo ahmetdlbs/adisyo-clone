@@ -15,7 +15,7 @@ export function PageCard({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
       data-slot="page-card"
-      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm", className)}
+      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-(--shadow-card)", className)}
       {...props}
     />
   );

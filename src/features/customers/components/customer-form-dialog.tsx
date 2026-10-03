@@ -13,7 +13,7 @@ interface CustomerFormDialogProps {
   customer: Customer | null;
   onOpenChange: (open: boolean) => void;
   /** Throw an Error to refuse the customer; its message is shown on the phone field. */
-  onSave: (values: CustomerFormValues) => void;
+  onSave: (values: CustomerFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts from this customer's values. */
@@ -29,9 +29,9 @@ export function CustomerFormDialog({ open, customer, onOpenChange, onSave }: Cus
     },
   });
 
-  const submit = form.handleSubmit((values) => {
+  const submit = form.handleSubmit(async (values) => {
     try {
-      onSave(values);
+      await onSave(values);
     } catch (error) {
       form.setError("phone", { message: error instanceof Error ? error.message : "Kaydedilemedi" });
     }
@@ -44,6 +44,7 @@ export function CustomerFormDialog({ open, customer, onOpenChange, onSave }: Cus
       title="Müşteri Ekle"
       description={customer ? "Müşteri bilgilerini güncelleyiniz." : "Yeni eklemek istediğiniz müşteri bilgilerini giriniz."}
       submitLabel={customer ? "Güncelle" : "Ekle"}
+      isSubmitting={form.formState.isSubmitting}
       onSubmit={submit}
     >
       <div className="grid grid-cols-2 gap-4">

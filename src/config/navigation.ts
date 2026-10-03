@@ -3,7 +3,6 @@ import {
   Briefcase,
   CheckSquare,
   DollarSign,
-  Gift,
   Home,
   Layers,
   LayoutGrid,
@@ -29,7 +28,6 @@ export interface NavLink {
   /** Omit for entries whose page does not exist yet; they render disabled. */
   href?: AppRoute;
   badge?: NavBadge;
-  highlighted?: boolean;
 }
 
 export interface NavGroup {
@@ -65,6 +63,7 @@ export const NAVIGATION: readonly NavEntry[] = [
       { label: "KDV Tanımlamaları", href: ROUTES.vatDefinitions },
       { label: "İndirimler", href: ROUTES.discounts },
       { label: "Mutfak Grupları", href: ROUTES.kitchenGroups },
+      { label: "Marş Grupları", href: ROUTES.courseGroups },
     ],
   },
   { label: "Sipariş", icon: ShoppingBag, href: ROUTES.orders },
@@ -105,11 +104,4 @@ export const NAVIGATION: readonly NavEntry[] = [
   },
   { label: "Yazıcılar", icon: Printer, href: ROUTES.printerSettings },
   { label: "Uygulama Mağazası", icon: LayoutGrid, href: ROUTES.appStore },
-  {
-    label: "Tavsiye Et ve Kazan",
-    icon: Gift,
-    href: ROUTES.referral,
-    badge: "Yeni",
-    highlighted: true,
-  },
 ];

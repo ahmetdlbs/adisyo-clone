@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/kit/data-table";
-import { useNow } from "@/features/pos/hooks/use-now";
 import { formatKurus } from "@/lib/money";
-import { productSalesToday, type ProductSales } from "@/features/pos/model/stats";
-import { usePosState } from "@/features/pos/store/pos-provider";
+import type { ProductSales } from "@/features/pos/model/stats";
 import { NoReportData, ReportTabShell, type ReportTab } from "./report-tab-shell";
 
 const REPORT_TABS: readonly ReportTab[] = [
@@ -25,24 +23,24 @@ const COLUMNS: readonly DataTableColumn<ProductSales>[] = [
   { id: "amount", header: "Toplam Tutar(₺)", align: "right", cell: (row) => formatKurus(row.amount) },
 ];
 
+const rowId = (row: ProductSales): string => row.productId ?? `deleted:${row.name}`;
+
 /**
- * "Ürün Bazında" is real, aggregated from today's paid bills (`productSalesToday`); the other dimensions
- * (region, category, recipe, menu, feature) are not attributes this demo's products carry, so they say so.
+ * "Ürün Bazında" is real, aggregated server-side from today's paid bills (api/'s /reports/product-sales); the
+ * other dimensions (region, category, recipe, menu, feature) are not attributes this demo's products carry, so
+ * they say so.
  */
-export function ProductSalesReportScreen() {
+export function ProductSalesReportScreen({ products }: { products: readonly ProductSales[] }) {
   const [tab, setTab] = useState(PRODUCT_TAB);
-  const state = usePosState();
-  const now = useNow();
-  const rows = now ? productSalesToday(state, now) : [];
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
-  const totalQuantity = rows.reduce((sum, row) => sum + row.quantity, 0);
+  const total = products.reduce((sum, row) => sum + row.amount, 0);
+  const totalQuantity = products.reduce((sum, row) => sum + row.quantity, 0);
 
   return (
     <ReportTabShell title="Ürün Satış Raporu" tabs={REPORT_TABS} activeTab={tab} onTabChange={setTab}>
       {tab === PRODUCT_TAB ? (
         <div className="rounded-lg border bg-card shadow-sm">
-          <DataTable columns={COLUMNS} rows={rows} getRowId={(row) => row.productId} caption="Ürün bazında satışlar" emptyMessage="Bugün satılan ürün yok." />
-          {rows.length > 0 && (
+          <DataTable columns={COLUMNS} rows={products} getRowId={rowId} caption="Ürün bazında satışlar" emptyMessage="Bugün satılan ürün yok." />
+          {products.length > 0 && (
             <div role="row" aria-label="Toplam" className="grid grid-cols-3 gap-4 border-t px-6 py-3 text-sm font-bold text-foreground">
               <span role="cell">Toplam</span>
               <span role="cell" className="text-right">

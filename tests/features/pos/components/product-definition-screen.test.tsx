@@ -2,39 +2,44 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProductDefinitionScreen } from "@/features/pos/components/product-definition-screen";
-import { createEmptyPosState, type PosState } from "@/features/pos/model/pos-state";
-import { createPosStore, PosProvider } from "@/features/pos/store/pos-provider";
-import { buildPosState } from "../../../support/pos-fixtures";
+import { PosProvider, type PosSnapshot } from "@/features/pos/store/pos-provider";
+import { buildPosSnapshot } from "../../../support/pos-fixtures";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
+const actions = vi.hoisted(() => ({
+  saveCategoryAction: vi.fn(),
+  deleteCategoryAction: vi.fn(),
+  saveProductAction: vi.fn(),
+  deleteProductAction: vi.fn(),
+}));
+vi.mock("@/features/pos/server/menu-actions", () => actions);
+
 beforeEach(() => {
   toast.success.mockClear();
   toast.error.mockClear();
+  router.push.mockClear();
+  Object.values(actions).forEach((mock) => mock.mockReset());
 });
 
-function setup(initial: PosState = buildPosState()) {
-  const store = createPosStore({ initial, storage: null });
+const EMPTY_SNAPSHOT: PosSnapshot = { areas: [], tables: [], categories: [], products: [], orders: [] };
+
+function setup(initial: PosSnapshot = buildPosSnapshot()) {
   render(
-    <PosProvider store={store}>
+    <PosProvider initial={initial}>
       <ProductDefinitionScreen />
     </PosProvider>
   );
-  return { store, user: userEvent.setup() };
+  return { user: userEvent.setup() };
 }
 
 type Setup = ReturnType<typeof setup>;
 
 const rowOf = (name: string) => screen.getByRole("row", { name: new RegExp(name) });
-const productNames = (store: Setup["store"]) => store.getState().products.map((product) => product.name);
-
-async function fillProduct(user: Setup["user"], { name, price }: { name?: string; price?: string }) {
-  const sheet = within(await screen.findByRole("dialog", { name: "Ürün Detay" }));
-  if (name !== undefined) await user.type(sheet.getByRole("textbox", { name: /Ürün Adı/ }), name);
-  if (price !== undefined) await user.type(sheet.getByRole("textbox", { name: /Fiyat/ }), price);
-  return sheet;
-}
 
 describe("ProductDefinitionScreen", () => {
   it("lists every product with its category and price, and counts them in the filter tabs", () => {
@@ -70,86 +75,34 @@ describe("ProductDefinitionScreen", () => {
   });
 
   describe("adding and editing", () => {
-    it("adds a product; the price is typed in lira and stored as whole kuruş", async () => {
-      const { user, store } = setup();
-
-      await user.click(screen.getByRole("button", { name: "Yeni Ürün" }));
-      const sheet = await fillProduct(user, { name: "Limonata", price: "75,50" });
-      await user.click(sheet.getByRole("button", { name: "Kaydet" }));
-
-      await waitFor(() => expect(productNames(store)).toContain("Limonata"));
-      expect(store.getState().products.find((product) => product.name === "Limonata")).toMatchObject({ price: 7550, categoryId: "c1", isFavorite: false });
-      expect(rowOf("Limonata")).toHaveTextContent("₺75,50");
-      expect(toast.success).toHaveBeenCalledWith("Ürün eklendi");
-    });
-
-    it("says what is missing when the form is empty", async () => {
+    // Product creation/editing itself moved to the full-page "Ürün Detay" screen (see
+    // product-detail-screen.test.tsx); this screen only has to send the user there.
+    it("sends the user to a blank Ürün Detay page for a new product", async () => {
       const { user } = setup();
 
       await user.click(screen.getByRole("button", { name: "Yeni Ürün" }));
-      await user.click(within(await screen.findByRole("dialog", { name: "Ürün Detay" })).getByRole("button", { name: "Kaydet" }));
 
-      expect(await screen.findByText("Ürün adı zorunludur")).toBeInTheDocument();
-      expect(screen.getByText("Geçerli bir fiyat giriniz")).toBeInTheDocument();
+      expect(router.push).toHaveBeenCalledWith("/product-definition/new");
     });
 
-    it("rejects a price that is not a valid amount", async () => {
+    it("sends the user to the product's own Ürün Detay page to edit it", async () => {
       const { user } = setup();
 
-      await user.click(screen.getByRole("button", { name: "Yeni Ürün" }));
-      const sheet = await fillProduct(user, { name: "Limonata", price: "12,345" });
-      await user.click(sheet.getByRole("button", { name: "Kaydet" }));
-
-      expect(await screen.findByText("Geçerli bir fiyat giriniz")).toBeInTheDocument();
-    });
-
-    it("shows the model's reason on the field when the name repeats in a category", async () => {
-      const { user, store } = setup();
-
-      await user.click(screen.getByRole("button", { name: "Yeni Ürün" }));
-      const sheet = await fillProduct(user, { name: "çay", price: "10" });
-      await user.click(sheet.getByRole("button", { name: "Kaydet" }));
-
-      expect(await screen.findByText("Bu kategoride aynı adlı ürün var")).toBeInTheDocument();
-      expect(store.getState().products).toHaveLength(3);
-    });
-
-    it("edits a product with its price prefilled the way it is typed", async () => {
-      const { user, store } = setup();
-
       await user.click(screen.getByRole("button", { name: "Çay düzenle" }));
-      const sheet = within(await screen.findByRole("dialog", { name: "Ürün Detay" }));
-      const price = sheet.getByRole("textbox", { name: /Fiyat/ });
-      expect(price).toHaveValue("52");
-      await user.clear(price);
-      await user.type(price, "55,5");
-      await user.click(sheet.getByRole("button", { name: "Güncelle" }));
 
-      await waitFor(() => expect(store.getState().products.find((product) => product.id === "p-cay")?.price).toBe(5550));
-      expect(toast.success).toHaveBeenCalledWith("Ürün güncellendi");
-    });
-
-    it("can take a product off the favourites", async () => {
-      const { user, store } = setup();
-
-      await user.click(screen.getByRole("button", { name: "Çay düzenle" }));
-      const sheet = within(await screen.findByRole("dialog", { name: "Ürün Detay" }));
-      await user.click(sheet.getByRole("switch", { name: "Favori Ürün" }));
-      await user.click(sheet.getByRole("button", { name: "Güncelle" }));
-
-      await waitFor(() => expect(store.getState().products.find((product) => product.id === "p-cay")?.isFavorite).toBe(false));
-      expect(screen.getByRole("tab", { name: /^Favori Ürünler\s*0$/ })).toBeInTheDocument();
+      expect(router.push).toHaveBeenCalledWith("/product-definition/p-cay");
     });
   });
 
-  it("deletes a product after confirming, without touching a bill that already has it", async () => {
-    const { user, store } = setup();
+  it("deletes a product after confirming", async () => {
+    actions.deleteProductAction.mockResolvedValue(undefined);
+    const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "Çay sil" }));
     await user.click(await screen.findByRole("button", { name: "Sil" }));
 
-    await waitFor(() => expect(productNames(store)).not.toContain("Çay"));
-    expect(store.getState().orders[0]?.lines.map((line) => line.name)).toContain("Çay");
+    await waitFor(() => expect(screen.queryByRole("row", { name: /Çay/ })).not.toBeInTheDocument());
+    expect(toast.success).toHaveBeenCalledWith("Ürün silindi");
   });
 
   describe("categories", () => {
@@ -159,41 +112,45 @@ describe("ProductDefinitionScreen", () => {
     };
 
     it("adds a category", async () => {
-      const { user, store } = setup();
+      actions.saveCategoryAction.mockResolvedValue({ id: "c3", name: "Salatalar" });
+      const { user } = setup();
 
       const dialog = await openCategories(user);
       await user.type(dialog.getByRole("textbox", { name: "Kategori adı" }), "Salatalar");
       await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
-      await waitFor(() => expect(store.getState().categories.map((category) => category.name)).toContain("Salatalar"));
+      await waitFor(() => expect(dialog.getByText("Salatalar")).toBeInTheDocument());
     });
 
     it("will not delete a category that still has products", async () => {
-      const { user, store } = setup();
+      actions.deleteCategoryAction.mockRejectedValue(new Error("Kategoride ürün var"));
+      const { user } = setup();
 
       const dialog = await openCategories(user);
       await user.click(dialog.getByRole("button", { name: "İçecekler sil" }));
       await user.click(await screen.findByRole("button", { name: "Sil" }));
 
       await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Kategoride ürün var"));
-      expect(store.getState().categories).toHaveLength(2);
+      expect(dialog.getByText("İçecekler")).toBeInTheDocument();
     });
 
     it("deletes an empty category", async () => {
-      const { user, store } = setup();
+      actions.saveCategoryAction.mockResolvedValue({ id: "c3", name: "Salatalar" });
+      actions.deleteCategoryAction.mockResolvedValue(undefined);
+      const { user } = setup();
       const dialog = await openCategories(user);
       await user.type(dialog.getByRole("textbox", { name: "Kategori adı" }), "Salatalar");
       await user.click(dialog.getByRole("button", { name: "Ekle" }));
-      await waitFor(() => expect(store.getState().categories).toHaveLength(3));
+      await waitFor(() => expect(dialog.getByText("Salatalar")).toBeInTheDocument());
 
       await user.click(dialog.getByRole("button", { name: "Salatalar sil" }));
       await user.click(await screen.findByRole("button", { name: "Sil" }));
 
-      await waitFor(() => expect(store.getState().categories).toHaveLength(2));
+      await waitFor(() => expect(dialog.queryByText("Salatalar")).not.toBeInTheDocument());
     });
 
     it("will not offer a new product while there is no category to put it in", () => {
-      setup(createEmptyPosState());
+      setup(EMPTY_SNAPSHOT);
 
       expect(screen.getByRole("button", { name: "Yeni Ürün" })).toBeDisabled();
     });

@@ -23,7 +23,7 @@ interface ServiceChargeCardProps {
   /** "Kuver" or "Garsoniye": what field labels and the toast are named after. */
   noun: string;
   charge: ServiceCharge | null;
-  onSave: (charge: ServiceCharge) => void;
+  onSave: (charge: ServiceCharge) => Promise<void>;
 }
 
 const toAmountFieldText = (charge: ServiceCharge) => (charge.kind === "amount" ? toAmountText(charge.amount) : String(charge.amount));

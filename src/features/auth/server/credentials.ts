@@ -1,21 +1,23 @@
 import "server-only";
-import { createHash, timingSafeEqual } from "node:crypto";
-import type { ServerEnv } from "@/lib/env";
+import { ApiError, apiFetch } from "@/lib/api-client";
 import type { LoginValues } from "../model/login";
 
-// Hashing first gives both sides the same length, which timingSafeEqual requires.
-const digest = (value: string) => createHash("sha256").update(value).digest();
-const safeEqual = (a: string, b: string) => timingSafeEqual(digest(a), digest(b));
+/** What api/'s `POST /auth/login` returns on success — see api/src/auth/auth.service.ts LoginResult. */
+export interface LoginResult {
+  token: string;
+  user: { id: string; tenantId: string; role: string; name: string; email: string };
+}
 
 /**
- * Checks the demo account. Both comparisons always run, so response time does not reveal which of the two
- * was wrong.
+ * Checks the given credentials against api/. Returns the login result on success, `null` on a wrong
+ * email/password (api/ answers 401 for both, so which one was wrong never leaks here either). Any other
+ * failure (api/ unreachable, 5xx, ...) is rethrown — that's not "wrong credentials", it's an outage.
  */
-export function verifyCredentials(
-  { username, password }: LoginValues,
-  expected: Pick<ServerEnv, "DEMO_LOGIN_USER" | "DEMO_LOGIN_PASSWORD">
-): boolean {
-  const isUserValid = safeEqual(username, expected.DEMO_LOGIN_USER);
-  const isPasswordValid = safeEqual(password, expected.DEMO_LOGIN_PASSWORD);
-  return isUserValid && isPasswordValid;
+export async function verifyCredentials({ username, password }: LoginValues): Promise<LoginResult | null> {
+  try {
+    return await apiFetch<LoginResult>("/auth/login", { method: "POST", body: { email: username, password } });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
+  }
 }

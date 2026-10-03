@@ -11,7 +11,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { cn } from "@/lib/utils";
 import { areaFormSchema } from "../model/definition-forms";
-import { addTables, deleteArea, deleteTable, moveArea, saveArea, saveTable } from "../model/floor-plan";
 import type { TableDefinition } from "../model/pos-state";
 import { usePosActions, usePosState } from "../store/pos-provider";
 import { BulkTablesDialog } from "./bulk-tables-dialog";
@@ -30,11 +29,10 @@ export function TableAreaScreen() {
 
   const areaId = state.areas.some((area) => area.id === selectedAreaId) ? (selectedAreaId ?? "") : (state.areas[0]?.id ?? "");
   const tables = state.tables.filter((table) => table.areaId === areaId);
-  const newId = () => crypto.randomUUID();
 
-  const removeTable = (table: TableDefinition) => {
+  const removeTable = async (table: TableDefinition) => {
     try {
-      actions.change((current) => deleteTable(current, table.id));
+      await actions.deleteTable(table.id);
       toast.success("Masa silindi");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Masa silinemedi");
@@ -119,8 +117,8 @@ export function TableAreaScreen() {
         areas={state.areas}
         defaultAreaId={areaId}
         onOpenChange={tableDialog.onOpenChange}
-        onSave={(values) => {
-          actions.change((current) => saveTable(current, { id: tableDialog.editing?.id ?? null, ...values }, newId));
+        onSave={async (values) => {
+          await actions.saveTable(tableDialog.editing?.id ?? null, values);
           toast.success(tableDialog.editing ? "Masa güncellendi" : "Masa eklendi");
           tableDialog.close();
         }}
@@ -132,8 +130,8 @@ export function TableAreaScreen() {
         areas={state.areas}
         defaultAreaId={areaId}
         onOpenChange={setIsBulkOpen}
-        onSave={(values) => {
-          actions.change((current) => addTables(current, values, newId));
+        onSave={async (values) => {
+          await actions.addTables(values);
           toast.success(values.count === 1 ? "Masa eklendi" : `${values.count} masa eklendi`);
           setIsBulkOpen(false);
         }}
@@ -147,15 +145,15 @@ export function TableAreaScreen() {
         noun="Bölge"
         schema={areaFormSchema}
         items={state.areas}
-        onSave={({ id, name }) => {
-          actions.change((current) => saveArea(current, { id, name }, newId));
+        onSave={async ({ id, name }) => {
+          await actions.saveArea(id, name);
           toast.success(id ? "Bölge güncellendi" : "Bölge eklendi");
         }}
-        onDelete={(id) => {
-          actions.change((current) => deleteArea(current, id));
+        onDelete={async (id) => {
+          await actions.deleteArea(id);
           toast.success("Bölge silindi");
         }}
-        onMove={(id, offset) => actions.change((current) => moveArea(current, id, offset))}
+        onMove={(id, offset) => actions.moveArea(id, offset)}
       />
     </PageContainer>
   );

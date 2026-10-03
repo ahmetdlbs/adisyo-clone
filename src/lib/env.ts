@@ -5,8 +5,8 @@ const MIN_SESSION_SECRET_LENGTH = 32;
 
 const serverEnvSchema = z.object({
   SESSION_SECRET: z.string().min(MIN_SESSION_SECRET_LENGTH, `must be at least ${MIN_SESSION_SECRET_LENGTH} characters`),
-  DEMO_LOGIN_USER: z.string().min(1, "is required"),
-  DEMO_LOGIN_PASSWORD: z.string().min(1, "is required"),
+  // The NestJS backend (api/): mints/verifies the same SESSION_SECRET-signed JWT this app stores as its cookie.
+  NEST_API_URL: z.string().url("must be a valid URL"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

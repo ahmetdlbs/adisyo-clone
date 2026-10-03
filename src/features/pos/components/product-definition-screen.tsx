@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Star, Tags, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable, type DataTableColumn } from "@/components/kit/data-table";
@@ -11,15 +12,13 @@ import { SearchInput } from "@/components/kit/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEntityDialog } from "@/hooks/use-entity-dialog";
+import { ROUTES } from "@/config/routes";
 import { filterByQuery } from "@/lib/search";
-import { categoryFormSchema, type ProductFormValues } from "../model/definition-forms";
-import { deleteCategory, deleteProduct, saveCategory, saveProduct } from "../model/menu";
 import { formatKurus } from "@/lib/money";
-import type { Product } from "../model/pos-state";
+import { categoryFormSchema } from "../model/definition-forms";
+import { defaultPortion, portionPrice, type Product } from "../model/pos-state";
 import { usePosActions, usePosState } from "../store/pos-provider";
 import { ManageListDialog } from "./manage-list-dialog";
-import { ProductFormSheet } from "./product-form-sheet";
 
 const ALL = "all";
 const FAVORITES = "favorites";
@@ -28,11 +27,10 @@ const FAVORITES = "favorites";
 export function ProductDefinitionScreen() {
   const state = usePosState();
   const actions = usePosActions();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState(ALL);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  const dialog = useEntityDialog<Product>();
-  const newId = () => crypto.randomUUID();
 
   const filter = selectedFilter === ALL || selectedFilter === FAVORITES || state.categories.some((category) => category.id === selectedFilter) ? selectedFilter : ALL;
   const categoryName = (categoryId: string) => state.categories.find((category) => category.id === categoryId)?.name ?? "—";
@@ -41,9 +39,13 @@ export function ProductDefinitionScreen() {
     filter === ALL || (filter === FAVORITES ? product.isFavorite : product.categoryId === filter);
   const rows = filterByQuery(state.products.filter(inFilter), query, (product) => `${product.name} ${product.barcode ?? ""}`);
 
-  const removeProduct = (product: Product) => {
-    actions.change((current) => deleteProduct(current, product.id));
-    toast.success("Ürün silindi");
+  const removeProduct = async (product: Product) => {
+    try {
+      await actions.deleteProduct(product.id);
+      toast.success("Ürün silindi");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ürün silinemedi");
+    }
   };
 
   const columns: readonly DataTableColumn<Product>[] = [
@@ -58,12 +60,30 @@ export function ProductDefinitionScreen() {
       ),
     },
     { id: "category", header: "Kategori", cell: (product) => categoryName(product.categoryId) },
-    { id: "price", header: "Fiyat", align: "right", cell: (product) => formatKurus(product.price) },
+    {
+      id: "price",
+      header: "Fiyat",
+      align: "right",
+      cell: (product) => {
+        const portion = defaultPortion(product);
+        if (!portion) return "—";
+        return (
+          <span>
+            {formatKurus(portionPrice(portion, "table"))}
+            {product.portions.length > 1 && (
+              <span className="ml-1 text-xs text-muted-foreground">(+{product.portions.length - 1} porsiyon)</span>
+            )}
+          </span>
+        );
+      },
+    },
     {
       id: "actions",
       header: "İşlemler",
       align: "right",
-      cell: (product) => <RowActions name={product.name} onEdit={() => dialog.openEdit(product)} onDelete={() => removeProduct(product)} />,
+      cell: (product) => (
+        <RowActions name={product.name} onEdit={() => router.push(`${ROUTES.productDefinition}/${product.id}`)} onDelete={() => removeProduct(product)} />
+      ),
     },
   ];
 
@@ -83,7 +103,7 @@ export function ProductDefinitionScreen() {
                 <Tags />
                 Kategoriler
               </Button>
-              <Button disabled={state.categories.length === 0} onClick={dialog.openCreate}>
+              <Button disabled={state.categories.length === 0} onClick={() => router.push(`${ROUTES.productDefinition}/new`)}>
                 <Plus />
                 Yeni Ürün
               </Button>
@@ -107,20 +127,6 @@ export function ProductDefinitionScreen() {
         </PageBody>
       </PageCard>
 
-      <ProductFormSheet
-        key={dialog.session}
-        open={dialog.isOpen}
-        product={dialog.editing}
-        categories={state.categories}
-        defaultCategoryId={state.categories.some((category) => category.id === filter) ? filter : (state.categories[0]?.id ?? "")}
-        onOpenChange={dialog.onOpenChange}
-        onSave={(values: ProductFormValues) => {
-          actions.change((current) => saveProduct(current, { id: dialog.editing?.id ?? null, ...values }, newId));
-          toast.success(dialog.editing ? "Ürün güncellendi" : "Ürün eklendi");
-          dialog.close();
-        }}
-      />
-
       <ManageListDialog
         open={isCategoriesOpen}
         onOpenChange={setIsCategoriesOpen}
@@ -129,12 +135,12 @@ export function ProductDefinitionScreen() {
         noun="Kategori"
         schema={categoryFormSchema}
         items={state.categories}
-        onSave={({ id, name }) => {
-          actions.change((current) => saveCategory(current, { id, name }, newId));
+        onSave={async ({ id, name }) => {
+          await actions.saveCategory(id, name);
           toast.success(id ? "Kategori güncellendi" : "Kategori eklendi");
         }}
-        onDelete={(id) => {
-          actions.change((current) => deleteCategory(current, id));
+        onDelete={async (id) => {
+          await actions.deleteCategory(id);
           toast.success("Kategori silindi");
         }}
       />

@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  createEmptyServiceSettings,
   createServiceChargeFormSchema,
-  saveServiceCharge,
   serviceChargeAmount,
-  type ServiceSettings,
 } from "@/features/service/model/service-charge";
-
-const base = (): ServiceSettings => createEmptyServiceSettings();
 
 describe("createServiceChargeFormSchema", () => {
   it("needs a name", () => {
@@ -45,24 +40,6 @@ describe("createServiceChargeFormSchema", () => {
 
     expect(result.success).toBe(false);
     expect(result.error?.issues.map((issue) => issue.path[0]).sort()).toEqual(["amount", "name"]);
-  });
-});
-
-describe("saveServiceCharge", () => {
-  it("sets the kuver definition", () => {
-    const state = saveServiceCharge(base(), "kuver", { name: "Kuver", kind: "amount", amount: 1000, autoAdd: true });
-
-    expect(state.kuver).toEqual({ name: "Kuver", kind: "amount", amount: 1000, autoAdd: true });
-    expect(state.garsoniye).toBeNull();
-  });
-
-  it("does not touch the other charge", () => {
-    const withGarsoniye = { ...base(), garsoniye: { name: "Garsoniye", kind: "percent" as const, amount: 10, autoAdd: true } };
-
-    const state = saveServiceCharge(withGarsoniye, "kuver", { name: "Kuver", kind: "amount", amount: 500, autoAdd: false });
-
-    expect(state.garsoniye).toEqual(withGarsoniye.garsoniye);
-    expect(state.kuver).toMatchObject({ autoAdd: false });
   });
 });
 

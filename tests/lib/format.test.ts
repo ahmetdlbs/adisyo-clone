@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, formatTRY } from "@/lib/format";
+import { formatClock, formatDate, formatTRY } from "@/lib/format";
 
 describe("formatClock", () => {
   it("shows the time of day as HH:mm", () => {
@@ -9,6 +9,16 @@ describe("formatClock", () => {
 
   it("uses the given time zone", () => {
     expect(formatClock("2026-09-21T20:03:00.000Z", "Europe/Istanbul")).toBe("23:03");
+  });
+});
+
+describe("formatDate", () => {
+  it("shows the date as DD.MM.YYYY", () => {
+    expect(formatDate("2026-09-19T16:21:00.000Z", "UTC")).toBe("19.09.2026");
+  });
+
+  it("uses the given time zone", () => {
+    expect(formatDate("2026-09-19T22:30:00.000Z", "Europe/Istanbul")).toBe("20.09.2026");
   });
 });
 

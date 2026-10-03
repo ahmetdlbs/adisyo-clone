@@ -1,12 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RightsScreen } from "@/features/users/components/rights-screen";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-beforeEach(() => toast.success.mockClear());
+const actions = vi.hoisted(() => ({ saveGrants: vi.fn() }));
+vi.mock("@/features/users/server/actions", () => actions);
+
+beforeEach(() => {
+  toast.success.mockClear();
+  toast.error.mockClear();
+  actions.saveGrants.mockReset();
+});
 
 describe("RightsScreen", () => {
   it("has a heading and lists every permission as a row with a checkbox per role", () => {
@@ -26,6 +33,7 @@ describe("RightsScreen", () => {
   });
 
   it("toggles a cell and saves the whole grid", async () => {
+    actions.saveGrants.mockResolvedValue({ table_area: { Garson: true } });
     const user = userEvent.setup();
     render(<RightsScreen />);
 
@@ -35,7 +43,18 @@ describe("RightsScreen", () => {
 
     await user.click(screen.getByRole("button", { name: "Kaydet" }));
 
-    expect(toast.success).toHaveBeenCalledWith("Yetkiler kaydedildi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Yetkiler kaydedildi"));
+    expect(actions.saveGrants).toHaveBeenCalledWith({ table_area: { Garson: true } });
+  });
+
+  it("shows an error toast when saving fails", async () => {
+    actions.saveGrants.mockRejectedValue(new Error("Yetkiler kaydedilemedi"));
+    const user = userEvent.setup();
+    render(<RightsScreen />);
+
+    await user.click(screen.getByRole("button", { name: "Kaydet" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Yetkiler kaydedilemedi"));
   });
 
   it("searches permissions by title or description", async () => {

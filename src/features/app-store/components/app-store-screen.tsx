@@ -1,25 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 import { SearchInput } from "@/components/kit/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatKurus } from "@/lib/money";
 import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
-import { APP_CATEGORIES, APPS, appsInCategory, type AppListing, type CategoryId } from "../model/app-store";
+import {
+  appsInCategory,
+  categoryOptions,
+  isInstalled,
+  type AppEntitlement,
+  type CatalogApp,
+  type CategoryId,
+} from "../model/app-store";
+import { purchaseApp } from "../server/actions";
 
 type Tab = "store" | "installed";
 
-export function AppStoreScreen() {
+interface AppStoreScreenProps {
+  apps: readonly CatalogApp[];
+  entitlements: readonly AppEntitlement[];
+}
+
+export function AppStoreScreen({ apps, entitlements }: AppStoreScreenProps) {
   const [tab, setTab] = useState<Tab>("store");
   const [category, setCategory] = useState<CategoryId>("all");
   const [query, setQuery] = useState("");
 
-  const inTab = tab === "installed" ? APPS.filter((app) => app.isInstalled) : APPS;
-  const apps = filterByQuery(appsInCategory(inTab, category), query, (app) => app.name);
-  const installedCount = APPS.filter((app) => app.isInstalled).length;
+  const installedApps = apps.filter((app) => isInstalled(app, entitlements));
+  const inTab = tab === "installed" ? installedApps : apps;
+  const visibleApps = filterByQuery(appsInCategory(inTab, category), query, (app) => app.name);
 
   return (
     <div className="flex h-full flex-col gap-8 overflow-auto p-8">
@@ -30,10 +45,10 @@ export function AppStoreScreen() {
         <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="mt-8">
           <TabsList variant="line">
             <TabsTrigger value="store">
-              Mağaza <Badge variant="secondary">{APPS.length}</Badge>
+              Mağaza <Badge variant="secondary">{apps.length}</Badge>
             </TabsTrigger>
             <TabsTrigger value="installed">
-              Kurulu Uygulamalarım <Badge variant="secondary">{installedCount}</Badge>
+              Kurulu Uygulamalarım <Badge variant="secondary">{installedApps.length}</Badge>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -43,7 +58,7 @@ export function AppStoreScreen() {
         <nav aria-label="Kategoriler" className="w-full shrink-0 lg:w-60">
           <h2 className="mb-3 px-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Kategoriler</h2>
           <div className="flex flex-col gap-1">
-            {APP_CATEGORIES.map((item) => (
+            {categoryOptions(apps).map((item) => (
               <button
                 key={item.id}
                 type="button"
@@ -63,12 +78,12 @@ export function AppStoreScreen() {
         <div className="flex flex-1 flex-col gap-6">
           <SearchInput value={query} onValueChange={setQuery} placeholder="Entegre etmek istediğiniz platformu bulun..." aria-label="Uygulama ara" />
 
-          {apps.length === 0 ? (
+          {visibleApps.length === 0 ? (
             <p className="rounded-lg border bg-muted/30 p-6 text-center text-sm text-muted-foreground">Bu kategoride henüz uygulama yok.</p>
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {apps.map((app) => (
-                <AppCard key={app.id} app={app} />
+              {visibleApps.map((app) => (
+                <AppCard key={app.id} app={app} installed={isInstalled(app, entitlements)} />
               ))}
             </div>
           )}
@@ -78,7 +93,17 @@ export function AppStoreScreen() {
   );
 }
 
-function AppCard({ app }: { app: AppListing }) {
+function AppCard({ app, installed }: { app: CatalogApp; installed: boolean }) {
+  const [isPending, startTransition] = useTransition();
+
+  function handlePurchase() {
+    startTransition(async () => {
+      const result = await purchaseApp(app.id);
+      if (result.ok) toast.success(result.message);
+      else toast.error(result.message);
+    });
+  }
+
   return (
     <div className="flex h-full flex-col rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="mb-4 flex items-center gap-3">
@@ -89,13 +114,13 @@ function AppCard({ app }: { app: AppListing }) {
       </div>
       <p className="mb-5 flex-1 text-[13px] leading-relaxed text-muted-foreground">{app.description}</p>
       <div className="mt-auto flex items-center justify-between border-t pt-4">
-        {app.price && <span className="text-[13px] font-bold text-foreground">{app.price}</span>}
-        {app.isInstalled ? (
+        {!app.isCore && <span className="text-[13px] font-bold text-foreground">{formatKurus(app.monthlyPrice)} / ay</span>}
+        {installed ? (
           <Button variant="outline" size="sm" className="ml-auto" onClick={notifyUnavailable}>
             Yönet
           </Button>
         ) : (
-          <Button variant="outline" size="sm" className="ml-auto" onClick={notifyUnavailable}>
+          <Button variant="outline" size="sm" className="ml-auto" disabled={isPending} onClick={handlePurchase}>
             <Plus />
             Ekle
           </Button>

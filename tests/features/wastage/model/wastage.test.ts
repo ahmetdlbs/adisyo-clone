@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { saveWastage, totalWastageCost, wastageFormSchema, wastageSearchText, type Wastage } from "@/features/wastage/model/wastage";
+import { totalWastageCost, wastageFormSchema, wastageSearchText, type Wastage } from "@/features/wastage/model/wastage";
 
 const KOLA: Wastage = {
   id: "w1",
@@ -11,7 +11,7 @@ const KOLA: Wastage = {
   responsible: "Ahmet Can",
 };
 
-const values = { productName: "Kola", reason: "Kırıldı", quantity: "2", cost: "40", occurredAt: "2026-09-20T10:00", responsible: "Ahmet Can" };
+const values = { productName: "Kola", reason: "Kırıldı", quantity: "2", cost: "40", occurredAt: "2026-09-20T10:00", responsible: "Ahmet Can", stockItemId: "", stockQuantity: "" };
 
 describe("wastageFormSchema", () => {
   it("turns a filled form into a wastage record", () => {
@@ -19,6 +19,20 @@ describe("wastageFormSchema", () => {
 
     expect(result).toMatchObject({ productName: "Kola", reason: "Kırıldı", quantity: 2, cost: 4000, responsible: "Ahmet Can" });
     expect(result.occurredAt).toBe(new Date("2026-09-20T10:00").toISOString());
+  });
+
+  it("leaves the stock fields out when no stock card is chosen", () => {
+    expect(wastageFormSchema.parse(values)).toMatchObject({ stockItemId: undefined, stockQuantity: undefined });
+  });
+
+  it("reads a chosen stock card with its amount (either decimal separator)", () => {
+    expect(wastageFormSchema.parse({ ...values, stockItemId: "s1", stockQuantity: "0,5" })).toMatchObject({ stockItemId: "s1", stockQuantity: 0.5 });
+  });
+
+  it("wants the stock card and its amount together, and the amount above zero", () => {
+    expect(wastageFormSchema.safeParse({ ...values, stockItemId: "s1" }).error?.issues[0]?.message).toBe("Düşülecek stok miktarını giriniz");
+    expect(wastageFormSchema.safeParse({ ...values, stockQuantity: "1" }).error?.issues[0]?.message).toBe("Stok kartı seçiniz");
+    expect(wastageFormSchema.safeParse({ ...values, stockItemId: "s1", stockQuantity: "0" }).error?.issues[0]?.message).toBe("Stok miktarı sıfırdan büyük olmalıdır");
   });
 
   it("needs a product", () => {
@@ -40,22 +54,6 @@ describe("wastageFormSchema", () => {
 
   it("needs someone responsible", () => {
     expect(wastageFormSchema.safeParse({ ...values, responsible: "" }).error?.issues[0]?.message).toBe("Sorumlu kişi zorunludur");
-  });
-});
-
-describe("saveWastage", () => {
-  it("adds a wastage record", () => {
-    const result = saveWastage([], wastageFormSchema.parse(values), () => "new-id");
-
-    expect(result[0]).toMatchObject({ id: "new-id", productName: "Kola" });
-  });
-
-  it("does not modify the list it is given", () => {
-    const list: Wastage[] = [];
-
-    saveWastage(list, wastageFormSchema.parse(values), () => "id");
-
-    expect(list).toEqual([]);
   });
 });
 

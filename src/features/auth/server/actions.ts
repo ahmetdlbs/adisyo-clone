@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/config/routes";
-import { getServerEnv } from "@/lib/env";
 import { safeRedirectPath } from "../model/access";
 import { loginSchema, type LoginState } from "../model/login";
 import { verifyCredentials } from "./credentials";
@@ -10,6 +9,7 @@ import { createSession, deleteSession } from "./session";
 
 // One message for "no such user" and "wrong password": the response must not say which one it was.
 const INVALID_CREDENTIALS_MESSAGE = "Kullanıcı adı veya şifre hatalı.";
+const CONNECTION_ERROR_MESSAGE = "Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.";
 
 export async function loginAction(_previous: LoginState, formData: FormData): Promise<LoginState> {
   const typedUsername = String(formData.get("username") ?? "");
@@ -23,11 +23,19 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
     return { fieldErrors: { username: errors.username?.[0], password: errors.password?.[0] }, username: typedUsername };
   }
 
-  if (!verifyCredentials(parsed.data, getServerEnv())) {
+  // An outage (api/ unreachable, 5xx, ...) is not "wrong credentials" — verifyCredentials rethrows it as
+  // such, so it must be caught here too, or it would crash the whole page instead of the login form.
+  let result;
+  try {
+    result = await verifyCredentials(parsed.data);
+  } catch {
+    return { message: CONNECTION_ERROR_MESSAGE, username: typedUsername };
+  }
+  if (!result) {
     return { message: INVALID_CREDENTIALS_MESSAGE, username: typedUsername };
   }
 
-  await createSession(parsed.data.username);
+  await createSession(result.token);
 
   const next = formData.get("next");
   redirect(safeRedirectPath(typeof next === "string" ? next : undefined));

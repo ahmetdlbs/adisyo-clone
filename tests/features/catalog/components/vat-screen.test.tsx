@@ -4,15 +4,23 @@ import userEvent from "@testing-library/user-event";
 import { MAX_VAT_DEFINITIONS, type VatDefinition } from "@/features/catalog/model/vat";
 import { VatScreen } from "@/features/catalog/components/vat-screen";
 
-const toast = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn() }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
+
+const actions = vi.hoisted(() => ({ createVat: vi.fn(), updateVat: vi.fn(), deleteVat: vi.fn() }));
+vi.mock("@/features/catalog/server/vat-actions", () => actions);
 
 beforeEach(() => {
   toast.success.mockClear();
+  toast.error.mockClear();
+  Object.values(actions).forEach((mock) => mock.mockReset());
 });
 
-function setup(initialVats?: readonly VatDefinition[]) {
-  render(<VatScreen initialVats={initialVats} />);
+const FOOD: VatDefinition = { id: "1", name: "Yiyecek", rate: 10, isDefault: true };
+const DRINK: VatDefinition = { id: "2", name: "İçecek", rate: 10, isDefault: false };
+
+function setup(vats: readonly VatDefinition[] = [FOOD, DRINK]) {
+  render(<VatScreen vats={vats} />);
   return { user: userEvent.setup() };
 }
 
@@ -43,32 +51,44 @@ describe("VatScreen", () => {
     expect(defaultBadges()).toHaveLength(1);
   });
 
-  it("adds a definition", async () => {
+  it("adds a definition and calls the API with the entered values", async () => {
+    actions.createVat.mockResolvedValue({ id: "3", name: "Alkol", rate: 20, isDefault: false });
     const { user } = setup();
 
     await addDefinition(user, { name: "Alkol", rate: "%20" });
 
-    expect(within(await screen.findByRole("row", { name: /Alkol/ })).getByText("%20")).toBeInTheDocument();
+    expect(actions.createVat).toHaveBeenCalledWith({ name: "Alkol", rate: 20, isDefault: false });
     expect(toast.success).toHaveBeenCalledWith("KDV grubu eklendi");
   });
 
-  it("moves the default badge to a definition that asks for it", async () => {
+  it("asks the API to make the new definition the default", async () => {
+    actions.createVat.mockResolvedValue({ id: "3", name: "Alkol", rate: 20, isDefault: true });
     const { user } = setup();
 
     await addDefinition(user, { name: "Alkol", rate: "%20", makeDefault: true });
 
-    await waitFor(() => expect(within(rowOf("Alkol")).getByText("Varsayılan")).toBeInTheDocument());
-    expect(defaultBadges()).toHaveLength(1);
+    expect(actions.createVat).toHaveBeenCalledWith({ name: "Alkol", rate: 20, isDefault: true });
   });
 
-  it("promotes another definition when the default is deleted", async () => {
+  it("deletes a definition after confirming", async () => {
+    actions.deleteVat.mockResolvedValue(undefined);
     const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "Yiyecek sil" }));
     await user.click(await screen.findByRole("button", { name: "Sil" }));
 
-    await waitFor(() => expect(screen.queryByRole("row", { name: /Yiyecek/ })).not.toBeInTheDocument());
-    expect(within(rowOf("İçecek")).getByText("Varsayılan")).toBeInTheDocument();
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("KDV grubu silindi"));
+    expect(actions.deleteVat).toHaveBeenCalledWith("1");
+  });
+
+  it("shows an error toast when deleting fails", async () => {
+    actions.deleteVat.mockRejectedValue(new Error("KDV grubu silinemedi"));
+    const { user } = setup();
+
+    await user.click(screen.getByRole("button", { name: "Yiyecek sil" }));
+    await user.click(await screen.findByRole("button", { name: "Sil" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("KDV grubu silinemedi"));
   });
 
   it("requires a name and a rate", async () => {
@@ -80,6 +100,7 @@ describe("VatScreen", () => {
 
     expect(await screen.findByText("Tanım adı zorunludur")).toBeInTheDocument();
     expect(screen.getByText("KDV oranı zorunludur")).toBeInTheDocument();
+    expect(actions.createVat).not.toHaveBeenCalled();
   });
 
   it("stops offering new groups once the maximum is reached", () => {

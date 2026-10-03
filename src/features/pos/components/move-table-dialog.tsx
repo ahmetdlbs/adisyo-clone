@@ -45,10 +45,10 @@ function MoveBody({ order, onDone }: { order: Order; onDone: () => void }) {
     .filter((table) => !orderForTable(state, table.id))
     .map((table) => ({ value: table.id, label: `${areaName(table.areaId)} · ${table.name}` }));
 
-  const move = () => {
+  const move = async () => {
     if (!targetId) return;
     try {
-      actions.moveOrderToTable(order.id, targetId);
+      await actions.moveOrderToTable(order.id, targetId);
       toast.success(`Sipariş ${options.find((option) => option.value === targetId)?.label ?? "masaya"} taşındı`);
       onDone();
     } catch (error) {

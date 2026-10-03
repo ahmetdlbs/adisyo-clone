@@ -15,20 +15,20 @@ import { formatClock } from "@/lib/format";
 import { formatKurus } from "@/lib/money";
 import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
-import { EXPENSE_PAYMENT_METHODS, expenseSearchText, saveExpense, type Expense, type ExpenseFormValues } from "../model/expense";
+import { EXPENSE_PAYMENT_METHODS, expenseSearchText, type Expense, type ExpenseFormValues } from "../model/expense";
+import { createExpense } from "../server/actions";
 import { ExpenseFormDialog } from "./expense-form-dialog";
 
 const methodLabel = (method: Expense["paymentMethod"]) => EXPENSE_PAYMENT_METHODS.find((option) => option.value === method)?.label ?? method;
 
-export function ExpensesScreen({ initialExpenses = [] }: { initialExpenses?: readonly Expense[] }) {
-  const [expenses, setExpenses] = useState(initialExpenses);
+export function ExpensesScreen({ expenses }: { expenses: readonly Expense[] }) {
   const [query, setQuery] = useState("");
   const dialog = useEntityDialog<never>();
 
   const pager = usePagination(filterByQuery(expenses, query, expenseSearchText));
 
-  const handleSave = (values: ExpenseFormValues) => {
-    setExpenses((current) => saveExpense(current, values, () => crypto.randomUUID()));
+  const handleSave = async (values: ExpenseFormValues) => {
+    await createExpense(values);
     toast.success("Masraf eklendi");
     dialog.close();
   };

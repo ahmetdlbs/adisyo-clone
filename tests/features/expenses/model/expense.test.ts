@@ -4,7 +4,6 @@ import {
   EXPENSE_PAYMENT_METHODS,
   expenseFormSchema,
   expenseSearchText,
-  saveExpense,
   totalExpenses,
   type Expense,
 } from "@/features/expenses/model/expense";
@@ -39,22 +38,6 @@ describe("expenseFormSchema", () => {
 
   it("does not need a note", () => {
     expect(expenseFormSchema.safeParse({ ...values, note: "" }).success).toBe(true);
-  });
-});
-
-describe("saveExpense", () => {
-  it("adds an expense", () => {
-    const result = saveExpense([], { type: "Mutfak Gideri", paymentMethod: "cash", amount: 1000, occurredAt: "2026-09-20T10:00:00.000Z", note: "" }, () => "new-id");
-
-    expect(result).toEqual([{ id: "new-id", type: "Mutfak Gideri", paymentMethod: "cash", amount: 1000, occurredAt: "2026-09-20T10:00:00.000Z", note: "" }]);
-  });
-
-  it("does not modify the list it is given", () => {
-    const list: Expense[] = [];
-
-    saveExpense(list, { type: "Mutfak Gideri", paymentMethod: "cash", amount: 1000, occurredAt: "2026-09-20T10:00:00.000Z", note: "" }, () => "id");
-
-    expect(list).toEqual([]);
   });
 });
 

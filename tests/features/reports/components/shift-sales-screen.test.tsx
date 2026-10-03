@@ -1,29 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ShiftSalesScreen } from "@/features/reports/components/shift-sales-screen";
-import { useNow } from "@/features/pos/hooks/use-now";
-import { createPosStore, PosProvider } from "@/features/pos/store/pos-provider";
-import { billLine, buildClosedOrder, buildPosState, localTime } from "../../../support/pos-fixtures";
+import { billLine, buildDaySummary } from "../../../support/pos-fixtures";
+import { closedOrder } from "../../../support/report-fixtures";
 
-vi.mock("@/features/pos/hooks/use-now", () => ({ useNow: vi.fn() }));
-
-beforeEach(() => {
-  vi.mocked(useNow).mockReturnValue(localTime(20));
-});
+const DAY = buildDaySummary({ paidCount: 1, salesTotal: 10000, byMethod: [{ method: "cash", amount: 10000, share: 100 }] });
+const CLOSED_ORDERS = [
+  closedOrder({ id: "h1", number: 1, status: "paid", lines: [billLine("a", 10000)] }),
+  closedOrder({ id: "h2", number: 2, status: "cancelled", lines: [billLine("b", 5000)] }),
+];
 
 function setup() {
-  const paid = buildClosedOrder({ id: "h1", closedAt: localTime(15), lines: [billLine("a", 10000)] });
-  const cancelled = buildClosedOrder({ id: "h2", closedAt: localTime(16), lines: [billLine("b", 5000)], payments: [], outcome: "cancelled" as const });
-  const initial = {
-    ...buildPosState(),
-    history: [paid, { ...cancelled, order: { ...cancelled.order, number: 2 } }],
-  };
-  render(
-    <PosProvider store={createPosStore({ initial, storage: null })}>
-      <ShiftSalesScreen />
-    </PosProvider>
-  );
+  render(<ShiftSalesScreen day={DAY} closedOrders={CLOSED_ORDERS} />);
   return userEvent.setup();
 }
 

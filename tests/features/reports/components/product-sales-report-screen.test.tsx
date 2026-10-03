@@ -1,27 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ProductSalesReportScreen } from "@/features/reports/components/product-sales-report-screen";
-import { useNow } from "@/features/pos/hooks/use-now";
-import { createPosStore, PosProvider } from "@/features/pos/store/pos-provider";
-import { billLine, buildClosedOrder, buildPosState, localTime } from "../../../support/pos-fixtures";
+import type { ProductSales } from "@/features/pos/model/stats";
 
-vi.mock("@/features/pos/hooks/use-now", () => ({ useNow: vi.fn() }));
+const PRODUCTS: ProductSales[] = [{ productId: "p-cay", name: "p-cay", quantity: 3, amount: 15600 }];
 
-beforeEach(() => {
-  vi.mocked(useNow).mockReturnValue(localTime(20));
-});
-
-function setup() {
-  const initial = {
-    ...buildPosState(),
-    history: [buildClosedOrder({ id: "h1", closedAt: localTime(15), lines: [billLine("p-cay", 5200, 3)] })],
-  };
-  render(
-    <PosProvider store={createPosStore({ initial, storage: null })}>
-      <ProductSalesReportScreen />
-    </PosProvider>
-  );
+function setup(products: readonly ProductSales[] = PRODUCTS) {
+  render(<ProductSalesReportScreen products={products} />);
   return userEvent.setup();
 }
 

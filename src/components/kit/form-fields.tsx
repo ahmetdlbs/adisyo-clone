@@ -159,7 +159,7 @@ export function SwitchField<T extends FieldValues, TOut = T>({
       name={name}
       control={control}
       render={({ field, fieldState }) => (
-        <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+        <Field orientation="horizontal" data-invalid={fieldState.invalid} className="items-center justify-between gap-4 border-b py-3 first:pt-0 last:border-b-0 last:pb-0">
           <FieldContent>
             <FieldLabel htmlFor={id}>{label}</FieldLabel>
             {description && <FieldDescription>{description}</FieldDescription>}

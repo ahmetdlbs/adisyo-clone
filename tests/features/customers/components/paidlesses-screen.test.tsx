@@ -8,15 +8,19 @@ import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+const actions = vi.hoisted(() => ({ createPaidless: vi.fn(), updatePaidless: vi.fn(), deletePaidless: vi.fn() }));
+vi.mock("@/features/customers/server/paidless-actions", () => actions);
+
 beforeEach(() => {
   Object.values(toast).forEach((mock) => mock.mockClear());
+  Object.values(actions).forEach((mock) => mock.mockReset());
 });
 
 const MEHMET: Paidless = { id: "p1", no: 10000000, firstName: "Mehmet", lastName: "Öz", title: "Müdür" };
 const ZEYNEP: Paidless = { id: "p2", no: 10000001, firstName: "Zeynep", lastName: "Aksoy", title: "" };
 
 const setup = (items: Paidless[] = []) => {
-  render(<PaidlessesScreen initialItems={items} />);
+  render(<PaidlessesScreen items={items} />);
   return userEvent.setup();
 };
 
@@ -59,7 +63,8 @@ describe("PaidlessesScreen", () => {
     expect(screen.getByText("Arama kriterlerine uygun kayıt bulunamadı.")).toBeInTheDocument();
   });
 
-  it("adds a person with the next number", async () => {
+  it("calls createPaidless with the entered values and shows a success toast", async () => {
+    actions.createPaidless.mockResolvedValue(MEHMET);
     const user = setup([MEHMET]);
 
     const dialog = await openAdd(user);
@@ -67,21 +72,22 @@ describe("PaidlessesScreen", () => {
     await user.type(dialog.getByRole("textbox", { name: "Unvan" }), "Garson");
     await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
-    await waitFor(() => expect(screen.getByRole("row", { name: /Can/ })).toBeInTheDocument());
-    expect(screen.getByRole("row", { name: /Can/ })).toHaveTextContent("#10000001");
-    expect(toast.success).toHaveBeenCalledWith("Ödenmez eklendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Ödenmez eklendi"));
+    expect(actions.createPaidless).toHaveBeenCalledWith(expect.objectContaining({ firstName: "Can", title: "Garson" }));
   });
 
-  it("asks for a first name", async () => {
+  it("asks for a first name, never calling createPaidless", async () => {
     const user = setup();
 
     const dialog = await openAdd(user);
     await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
     expect(await screen.findByText("Ad zorunludur")).toBeInTheDocument();
+    expect(actions.createPaidless).not.toHaveBeenCalled();
   });
 
-  it("shows the reason on the field when the person is already listed", async () => {
+  it("shows the API's reason on the field when the person is already listed", async () => {
+    actions.createPaidless.mockRejectedValue(new Error("Bu kişi zaten kayıtlı"));
     const user = setup([MEHMET]);
 
     const dialog = await openAdd(user);
@@ -92,7 +98,8 @@ describe("PaidlessesScreen", () => {
     expect(await screen.findByText("Bu kişi zaten kayıtlı")).toBeInTheDocument();
   });
 
-  it("edits a person with their values filled in", async () => {
+  it("edits a person with their values filled in and calls updatePaidless", async () => {
+    actions.updatePaidless.mockResolvedValue(MEHMET);
     const user = setup([MEHMET]);
 
     await user.click(screen.getByRole("button", { name: "Mehmet Öz düzenle" }));
@@ -102,18 +109,19 @@ describe("PaidlessesScreen", () => {
     await user.type(dialog.getByRole("textbox", { name: "Unvan" }), "Sahip");
     await user.click(dialog.getByRole("button", { name: "Güncelle" }));
 
-    await waitFor(() => expect(screen.getByRole("row", { name: /Mehmet Öz/ })).toHaveTextContent("Sahip"));
-    expect(toast.success).toHaveBeenCalledWith("Ödenmez güncellendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Ödenmez güncellendi"));
+    expect(actions.updatePaidless).toHaveBeenCalledWith("p1", expect.objectContaining({ title: "Sahip" }));
   });
 
   it("deletes a person after confirming", async () => {
+    actions.deletePaidless.mockResolvedValue(undefined);
     const user = setup([MEHMET, ZEYNEP]);
 
     await user.click(screen.getByRole("button", { name: "Mehmet Öz sil" }));
     await user.click(await screen.findByRole("button", { name: "Sil" }));
 
-    await waitFor(() => expect(screen.queryByRole("row", { name: /Mehmet/ })).not.toBeInTheDocument());
-    expect(toast.success).toHaveBeenCalledWith("Ödenmez silindi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Ödenmez silindi"));
+    expect(actions.deletePaidless).toHaveBeenCalledWith("p1");
   });
 
   it("tells the user that download and transfer are not available yet", async () => {

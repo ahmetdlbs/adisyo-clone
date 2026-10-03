@@ -10,29 +10,33 @@ import { RowActions } from "@/components/kit/row-actions";
 import { SearchInput } from "@/components/kit/search-input";
 import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
-import { removeById, upsertById } from "@/lib/collection";
 import { filterByQuery } from "@/lib/search";
-import { INITIAL_FEATURE_GROUPS } from "../data/feature-groups";
 import { SELECTION_TYPE_OPTIONS, type FeatureGroup, type FeatureGroupFormValues } from "../model/feature-group";
+import { createFeatureGroup, deleteFeatureGroup, updateFeatureGroup } from "../server/feature-group-actions";
 import { FeatureGroupSheet } from "./feature-group-sheet";
 
 const selectionLabel = (group: FeatureGroup) =>
   SELECTION_TYPE_OPTIONS.find((option) => option.value === group.selectionType)?.label ?? group.selectionType;
 
-export function FeaturesScreen({ initialGroups = INITIAL_FEATURE_GROUPS }: { initialGroups?: readonly FeatureGroup[] }) {
-  const [groups, setGroups] = useState(initialGroups);
+export function FeaturesScreen({ groups }: { groups: readonly FeatureGroup[] }) {
   const [query, setQuery] = useState("");
   const dialog = useEntityDialog<FeatureGroup>();
 
-  const handleSave = (values: FeatureGroupFormValues) => {
-    setGroups((current) => upsertById(current, { id: dialog.editing?.id ?? crypto.randomUUID(), ...values }));
-    toast.success(dialog.editing ? "Özellik grubu güncellendi" : "Özellik grubu eklendi");
+  const handleSave = async (values: FeatureGroupFormValues) => {
+    if (dialog.editing) {
+      await updateFeatureGroup(dialog.editing.id, values);
+      toast.success("Özellik grubu güncellendi");
+    } else {
+      await createFeatureGroup(values);
+      toast.success("Özellik grubu eklendi");
+    }
     dialog.close();
   };
 
   const handleDelete = (group: FeatureGroup) => {
-    setGroups((current) => removeById(current, group.id));
-    toast.success("Özellik grubu silindi");
+    deleteFeatureGroup(group.id)
+      .then(() => toast.success("Özellik grubu silindi"))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Özellik grubu silinemedi"));
   };
 
   const columns: readonly DataTableColumn<FeatureGroup>[] = [
@@ -80,7 +84,6 @@ export function FeaturesScreen({ initialGroups = INITIAL_FEATURE_GROUPS }: { ini
         key={dialog.session}
         open={dialog.isOpen}
         group={dialog.editing}
-        groups={groups}
         onOpenChange={dialog.onOpenChange}
         onSave={handleSave}
       />

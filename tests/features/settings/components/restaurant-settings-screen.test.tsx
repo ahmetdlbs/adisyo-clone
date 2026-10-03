@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RestaurantSettingsScreen } from "@/features/settings/components/restaurant-settings-screen";
 import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
@@ -7,9 +7,14 @@ import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+const actions = vi.hoisted(() => ({ updateRestaurantSettings: vi.fn() }));
+vi.mock("@/features/settings/server/actions", () => actions);
+
 beforeEach(() => {
   toast.success.mockClear();
+  toast.error.mockClear();
   toast.info.mockClear();
+  actions.updateRestaurantSettings.mockReset().mockResolvedValue(undefined);
 });
 
 const defaults = { name: "Adisyon Cafe", dayStart: "06:00", dayEnd: "23:45", lockSeconds: "0", firstOrderNumber: "101" };
@@ -28,7 +33,26 @@ describe("RestaurantSettingsScreen", () => {
 
     await user.click(screen.getByRole("button", { name: "Güncelle" }));
 
-    expect(toast.success).toHaveBeenCalledWith("Ayarlar güncellendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Ayarlar güncellendi"));
+    expect(actions.updateRestaurantSettings).toHaveBeenCalledWith({
+      name: "Adisyon Cafe",
+      dayStart: "06:00",
+      dayEnd: "23:45",
+      lockSeconds: 0,
+      firstOrderNumber: 101,
+      notificationSound: "1",
+      workMode: "all",
+    });
+  });
+
+  it("shows an error toast when saving fails", async () => {
+    actions.updateRestaurantSettings.mockRejectedValue(new Error("Ayarlar güncellenemedi"));
+    const user = userEvent.setup();
+    render(<RestaurantSettingsScreen initialSettings={defaults} />);
+
+    await user.click(screen.getByRole("button", { name: "Güncelle" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Ayarlar güncellenemedi"));
   });
 
   it("says what is invalid", async () => {

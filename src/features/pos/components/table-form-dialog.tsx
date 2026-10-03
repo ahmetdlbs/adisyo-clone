@@ -16,7 +16,7 @@ interface TableFormDialogProps {
   defaultAreaId: string;
   onOpenChange: (open: boolean) => void;
   /** Throw an Error to reject the table; its message is shown on the name field. */
-  onSave: (values: TableFormValues) => void;
+  onSave: (values: TableFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts from this table's values. */
@@ -26,9 +26,9 @@ export function TableFormDialog({ open, table, areas, defaultAreaId, onOpenChang
     defaultValues: { name: table?.name ?? "", areaId: table?.areaId ?? defaultAreaId, shape: table?.shape ?? "square" },
   });
 
-  const submit = form.handleSubmit((values) => {
+  const submit = form.handleSubmit(async (values) => {
     try {
-      onSave(values);
+      await onSave(values);
     } catch (error) {
       form.setError("name", { message: error instanceof Error ? error.message : "Kaydedilemedi" });
     }
@@ -41,6 +41,7 @@ export function TableFormDialog({ open, table, areas, defaultAreaId, onOpenChang
       title="Masa Tanımlama"
       description={table ? "Masa bilgilerini güncelleyiniz." : "Yeni masa bilgilerini giriniz."}
       submitLabel={table ? "Güncelle" : "Kaydet"}
+      isSubmitting={form.formState.isSubmitting}
       onSubmit={submit}
     >
       <TextField control={form.control} name="name" label="Masa Adı" required autoFocus />

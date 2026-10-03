@@ -1,66 +1,40 @@
-export const CATEGORY_IDS = ["all", "operations", "delivery", "payment", "courier", "einvoice", "data", "hotel", "loyalty"] as const;
+/** Mirrors api/'s `App.category` (prisma/schema.prisma) plus the "all" tab this screen adds on top. */
+export const CATEGORY_IDS = [
+  "all",
+  "operations",
+  "delivery",
+  "payment",
+  "courier",
+  "einvoice",
+  "data",
+  "hotel",
+  "loyalty",
+  "stock",
+  "reports",
+  "users",
+  "hardware",
+] as const;
 export type CategoryId = (typeof CATEGORY_IDS)[number];
 
-export interface AppListing {
+/** One row from `GET /apps-catalog` — see api/src/apps-catalog. Prices are kuruş, like everywhere else. */
+export interface CatalogApp {
   id: string;
+  key: string;
   name: string;
   description: string;
-  categories: readonly Exclude<CategoryId, "all">[];
-  isInstalled: boolean;
-  /** null for an installed, free app. */
-  price: string | null;
+  category: Exclude<CategoryId, "all">;
+  isCore: boolean;
+  monthlyPrice: number;
+  yearlyPrice: number;
 }
 
-export const APPS: readonly AppListing[] = [
-  {
-    id: "customer-screen",
-    name: "Müşteri Bilgi Ekranı",
-    description: "Sipariş alırken müşteriye anlık sepet özeti gösterin, şeffaf ve güven veren bir deneyim sunun.",
-    categories: ["operations"],
-    isInstalled: true,
-    price: null,
-  },
-  {
-    id: "caller-id",
-    name: "Android Caller ID",
-    description: "Gelen aramaları bilgisayarınıza ileterek arayan müşterinin sipariş ve iletişim bilgilerini anında gösterin.",
-    categories: ["operations"],
-    isInstalled: true,
-    price: null,
-  },
-  {
-    id: "satisfaction-survey",
-    name: "Müşteri Memnuniyeti",
-    description: "Fişteki QR ile müşterilerinizden anket yanıtı toplayın.",
-    categories: ["operations", "loyalty"],
-    isInstalled: false,
-    price: "Pro Plan",
-  },
-  {
-    id: "yemeksepeti",
-    name: "Yemek Sepeti (Deliveryhero)",
-    description: "Yemek Sepeti üzerinden gelen siparişleri doğrudan adisyona düşürün.",
-    categories: ["delivery"],
-    isInstalled: false,
-    price: "+₺225 / ay",
-  },
-  {
-    id: "getir-yemek",
-    name: "Getir Yemek",
-    description: "Getir Yemek siparişlerini doğrudan adisyona düşürün.",
-    categories: ["delivery"],
-    isInstalled: false,
-    price: "+₺225 / ay",
-  },
-  {
-    id: "trendyol-yemek",
-    name: "Trendyol Yemek",
-    description: "Trendyol Yemek siparişlerini doğrudan adisyona düşürün.",
-    categories: ["delivery"],
-    isInstalled: false,
-    price: "+₺225 / ay",
-  },
-] as const;
+export type EntitlementStatus = "ACTIVE" | "CANCELLED" | "EXPIRED";
+
+/** One row from `GET /billing/entitlements` — only `appId`/`status` matter to this screen. */
+export interface AppEntitlement {
+  appId: string;
+  status: EntitlementStatus;
+}
 
 const CATEGORY_LABELS: Record<CategoryId, string> = {
   all: "Tüm Uygulamalar",
@@ -72,11 +46,22 @@ const CATEGORY_LABELS: Record<CategoryId, string> = {
   data: "Veri Aktarımı & API",
   hotel: "Otel",
   loyalty: "Müşteri Sadakat",
+  stock: "Stok",
+  reports: "Raporlar",
+  users: "Kullanıcılar",
+  hardware: "Donanım",
 };
 
 /** Apps tagged with `category`, or every app for `"all"`. */
-export function appsInCategory(apps: readonly AppListing[], category: CategoryId): readonly AppListing[] {
-  return category === "all" ? apps : apps.filter((app) => app.categories.includes(category));
+export function appsInCategory(apps: readonly CatalogApp[], category: CategoryId): readonly CatalogApp[] {
+  return category === "all" ? apps : apps.filter((app) => app.category === category);
 }
 
-export const APP_CATEGORIES = CATEGORY_IDS.map((id) => ({ id, label: CATEGORY_LABELS[id], count: appsInCategory(APPS, id).length }));
+export function categoryOptions(apps: readonly CatalogApp[]) {
+  return CATEGORY_IDS.map((id) => ({ id, label: CATEGORY_LABELS[id], count: appsInCategory(apps, id).length }));
+}
+
+/** An app the tenant currently holds an active entitlement for — core apps are entitled from signup. */
+export function isInstalled(app: CatalogApp, entitlements: readonly AppEntitlement[]): boolean {
+  return app.isCore || entitlements.some((entitlement) => entitlement.appId === app.id && entitlement.status === "ACTIVE");
+}

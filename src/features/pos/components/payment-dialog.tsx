@@ -7,13 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Customer } from "@/features/customers/model/customer";
+import { fetchCustomers } from "@/features/customers/server/customer-actions";
 import { cn } from "@/lib/utils";
 import { pressKey, typedAmount } from "../model/amount-input";
 import { formatKurus, splitEvenly, toAmountText } from "@/lib/money";
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABELS,
-  applyPayment,
   canClose,
   isLineSettled,
   lineTotal,
@@ -79,6 +81,9 @@ function PaymentBody({ order, title, onPaid, onRequestDiscount }: PaymentBodyPro
   const [selectedLineIds, setSelectedLineIds] = useState<readonly string[]>([]);
   const [text, setText] = useState("");
   const [people, setPeople] = useState(2);
+  // Veresiye: the customer list is only fetched when "Ödenmez" is pressed; null while the picker is closed.
+  const [accountCustomers, setAccountCustomers] = useState<readonly Customer[] | null>(null);
+  const [accountCustomerId, setAccountCustomerId] = useState("");
 
   const due = remaining(order);
   const payableLines = order.lines.filter((line) => !line.isComplimentary && !isLineSettled(order, line.id));
@@ -109,22 +114,19 @@ function PaymentBody({ order, title, onPaid, onRequestDiscount }: PaymentBodyPro
     setText("");
   };
 
-  const pay = (method: PaymentMethod) => {
+  const pay = async (method: PaymentMethod, customerId?: string) => {
     try {
-      const request = {
+      const result = await actions.applyPayment(order.id, {
         method,
         tendered: amountToPay,
         // Lines are marked paid only when the amount came from picking them, not from a typed figure.
         lineIds: typed === null && selection !== null ? selectedLineIds : [],
-      };
-      const context = { paymentId: crypto.randomUUID(), now: new Date() };
-      const result = applyPayment(order, request, context);
-
-      actions.updateOrder(order.id, (current) => applyPayment(current, request, context).order);
+        ...(customerId ? { customerId } : {}),
+      });
       if (result.change > 0) toast.success(`Para üstü: ${formatKurus(result.change)}`);
 
       if (canClose(result.order)) {
-        actions.closeOrder(order.id);
+        await actions.closeOrder(order.id);
         toast.success("Ödeme tamamlandı");
         onPaid(order.id);
         return;
@@ -132,15 +134,29 @@ function PaymentBody({ order, title, onPaid, onRequestDiscount }: PaymentBodyPro
       toast.success(`${PAYMENT_METHOD_LABELS[method]} ile ${formatKurus(Math.min(amountToPay, due))} tahsil edildi`);
       setSelectedLineIds([]);
       setText("");
+      setAccountCustomers(null);
+      setAccountCustomerId("");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Ödeme alınamadı");
     }
   };
 
-  const closeWithoutPayment = () => {
-    actions.closeOrder(order.id);
-    toast.success("Sipariş kapatıldı");
-    onPaid(order.id);
+  const chooseMethod = async (method: PaymentMethod) => {
+    if (method !== "on_account") return pay(method);
+    // Offer to charge the amount to a customer's account; with no customers (or none reachable) it is a plain "Ödenmez".
+    const customers = await fetchCustomers().catch(() => []);
+    if (customers.length === 0) return pay(method);
+    setAccountCustomers(customers);
+  };
+
+  const closeWithoutPayment = async () => {
+    try {
+      await actions.closeOrder(order.id);
+      toast.success("Sipariş kapatıldı");
+      onPaid(order.id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Sipariş kapatılamadı");
+    }
   };
 
   return (
@@ -210,12 +226,41 @@ function PaymentBody({ order, title, onPaid, onRequestDiscount }: PaymentBodyPro
             <Button type="button" size="xl" onClick={closeWithoutPayment}>
               Siparişi Kapat
             </Button>
+          ) : accountCustomers ? (
+            <div role="group" aria-label="Veresiye müşterisi" className="grid gap-3 rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm font-semibold">Tutar kimin hesabına yazılsın?</p>
+              <Select
+                items={[{ value: "none", label: "Müşteri seçmeden (Ödenmez)" }, ...accountCustomers.map((customer) => ({ value: customer.id, label: `${customer.firstName} ${customer.lastName}` }))]}
+                value={accountCustomerId || "none"}
+                onValueChange={(value) => setAccountCustomerId(value === "none" ? "" : String(value))}
+              >
+                <SelectTrigger className="w-full" aria-label="Müşteri">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Müşteri seçmeden (Ödenmez)</SelectItem>
+                  {accountCustomers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.firstName} {customer.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" onClick={() => setAccountCustomers(null)}>
+                  Vazgeç
+                </Button>
+                <Button type="button" onClick={() => pay("on_account", accountCustomerId || undefined)}>
+                  Hesaba Yaz
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {PAYMENT_METHODS.map((method) => {
                 const Icon = METHOD_ICONS[method];
                 return (
-                  <Button key={method} type="button" variant="outline" disabled={!canPay} className="h-20 flex-col gap-1.5" onClick={() => pay(method)}>
+                  <Button key={method} type="button" variant="outline" disabled={!canPay} className="h-20 flex-col gap-1.5" onClick={() => chooseMethod(method)}>
                     <Icon className="size-6" />
                     <span className="text-[11px] leading-tight">{PAYMENT_METHOD_LABELS[method]}</span>
                   </Button>

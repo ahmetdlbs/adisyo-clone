@@ -1,34 +1,26 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EndOfDayReportScreen } from "@/features/reports/components/end-of-day-report-screen";
-import { useNow } from "@/features/pos/hooks/use-now";
-import { createPosStore, PosProvider } from "@/features/pos/store/pos-provider";
-import { billLine, buildClosedOrder, buildPosState, localTime } from "../../../support/pos-fixtures";
+import { PosProvider } from "@/features/pos/store/pos-provider";
+import { buildDaySummary, buildPosSnapshot } from "../../../support/pos-fixtures";
+import { closedOrder } from "../../../support/report-fixtures";
 
-vi.mock("@/features/pos/hooks/use-now", () => ({ useNow: vi.fn() }));
-
-beforeEach(() => {
-  vi.mocked(useNow).mockReturnValue(localTime(20));
+const DAY = buildDaySummary({
+  paidCount: 1,
+  salesTotal: 10000,
+  averageBill: 10000,
+  cancelledCount: 1,
+  cancelledTotal: 8000,
+  byMethod: [{ method: "cash", amount: 10000, share: 100 }],
 });
 
+const CLOSED_ORDERS = [closedOrder({ id: "h1", status: "paid" }), closedOrder({ id: "h2", status: "cancelled" })];
+
 function setup() {
-  const initial = {
-    ...buildPosState(),
-    history: [
-      buildClosedOrder({ id: "h1", closedAt: localTime(15), lines: [billLine("a", 10000)] }),
-      buildClosedOrder({
-        id: "h2",
-        closedAt: localTime(16),
-        lines: [billLine("b", 8000)],
-        payments: [],
-        outcome: "cancelled" as const,
-      }),
-    ],
-  };
   render(
-    <PosProvider store={createPosStore({ initial, storage: null })}>
-      <EndOfDayReportScreen />
+    <PosProvider initial={buildPosSnapshot()}>
+      <EndOfDayReportScreen day={DAY} closedOrders={CLOSED_ORDERS} />
     </PosProvider>
   );
   return userEvent.setup();
@@ -66,5 +58,15 @@ describe("EndOfDayReportScreen", () => {
 
     const payments = within(screen.getByRole("region", { name: "Alınan Ödemeler" }));
     expect(payments.getByText("Nakit")).toBeInTheDocument();
+  });
+
+  it("lists every closed order, paid and cancelled, on the Tüm Adisyonlar tab", async () => {
+    const user = setup();
+
+    await user.click(screen.getByRole("tab", { name: "Tüm Adisyonlar" }));
+
+    const rows = screen.getAllByRole("row");
+    expect(within(rows[1]!).getByText("Ödendi")).toBeInTheDocument();
+    expect(within(rows[2]!).getByText("İptal")).toBeInTheDocument();
   });
 });

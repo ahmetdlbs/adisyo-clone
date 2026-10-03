@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Kurus } from "@/lib/money";
 import { liraAmountSchema } from "@/lib/money-schema";
-import { isPhoneNumber, nationalNumber } from "@/lib/phone";
+import { isPhoneNumber } from "@/lib/phone";
 
 export interface Customer {
   id: string;
@@ -28,35 +28,6 @@ export const customerFormSchema = z.object({
 });
 export type CustomerFormInput = z.input<typeof customerFormSchema>;
 export type CustomerFormValues = z.output<typeof customerFormSchema>;
-
-/**
- * Adds a customer, or changes the one with `input.id`. A new customer gets the number after the highest in use.
- * Throws an Error with a Turkish message when the customer is unknown or the phone number belongs to someone else.
- */
-export function saveCustomer(
-  customers: readonly Customer[],
-  input: CustomerFormValues & { id: string | null },
-  newId: () => string
-): readonly Customer[] {
-  const { id, ...values } = input;
-  assertPhonesFree(customers, values, id);
-
-  if (id === null) {
-    const no = Math.max(0, ...customers.map((customer) => customer.no)) + 1;
-    return [...customers, { id: newId(), no, ...values }];
-  }
-  if (!customers.some((customer) => customer.id === id)) throw new Error("Müşteri bulunamadı");
-  return customers.map((customer) => (customer.id === id ? { ...customer, ...values } : customer));
-}
-
-function assertPhonesFree(customers: readonly Customer[], values: Pick<Customer, "phone" | "phone2">, ignoreId: string | null) {
-  const wanted = [values.phone, values.phone2].map(nationalNumber).filter((digits) => digits !== "");
-  const taken = customers
-    .filter((customer) => customer.id !== ignoreId)
-    .flatMap((customer) => [customer.phone, customer.phone2])
-    .map(nationalNumber);
-  if (wanted.some((digits) => taken.includes(digits))) throw new Error("Bu telefon numarası başka bir müşteride kayıtlı");
-}
 
 export const totalBalance = (customers: readonly Customer[]): Kurus => customers.reduce((sum, customer) => sum + customer.balance, 0);
 

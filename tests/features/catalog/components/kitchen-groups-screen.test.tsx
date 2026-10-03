@@ -2,21 +2,31 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KitchenGroupsScreen } from "@/features/catalog/components/kitchen-groups-screen";
+import type { KitchenGroup } from "@/features/catalog/model/kitchen-group";
 
-const toast = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn() }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-beforeEach(() => toast.success.mockClear());
+const actions = vi.hoisted(() => ({ createKitchenGroup: vi.fn(), updateKitchenGroup: vi.fn(), deleteKitchenGroup: vi.fn() }));
+vi.mock("@/features/catalog/server/kitchen-group-actions", () => actions);
 
-function setup() {
-  render(<KitchenGroupsScreen />);
+beforeEach(() => {
+  toast.success.mockClear();
+  toast.error.mockClear();
+  Object.values(actions).forEach((mock) => mock.mockReset());
+});
+
+const MUTFAK: KitchenGroup = { id: "1", name: "Mutfak", hasCookingStage: false, hasPackagingStage: false };
+
+function setup(groups: readonly KitchenGroup[] = [MUTFAK]) {
+  render(<KitchenGroupsScreen groups={groups} />);
   return { user: userEvent.setup() };
 }
 
 const dialog = () => screen.findByRole("dialog", { name: "Mutfak Grubu Tanımla" });
 
 describe("KitchenGroupsScreen", () => {
-  it("shows the heading, the default-status note and the existing group with its stages", () => {
+  it("shows the heading, the default-status note and the given group with its stages", () => {
     setup();
 
     expect(screen.getByRole("heading", { level: 1, name: "Mutfak Grubu Tanımları" })).toBeInTheDocument();
@@ -25,6 +35,7 @@ describe("KitchenGroupsScreen", () => {
   });
 
   it("adds a group with an optional stage", async () => {
+    actions.createKitchenGroup.mockResolvedValue({ id: "2", name: "Bar", hasCookingStage: true, hasPackagingStage: false });
     const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "Yeni" }));
@@ -33,12 +44,12 @@ describe("KitchenGroupsScreen", () => {
     await user.click(form.getByRole("checkbox", { name: "Pişirme aşaması" }));
     await user.click(form.getByRole("button", { name: "Ekle" }));
 
-    const row = await screen.findByRole("row", { name: /Bar/ });
-    expect(within(row).getByText("Hazırlanıyor › Pişirme › Hazırlandı")).toBeInTheDocument();
-    expect(toast.success).toHaveBeenCalledWith("Mutfak grubu eklendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Mutfak grubu eklendi"));
+    expect(actions.createKitchenGroup).toHaveBeenCalledWith({ name: "Bar", hasCookingStage: true, hasPackagingStage: false });
   });
 
-  it("requires a name and rejects a duplicate", async () => {
+  it("requires a name, and shows the API's reason for a duplicate", async () => {
+    actions.createKitchenGroup.mockRejectedValue(new Error("Bu mutfak grubu zaten tanımlı"));
     const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "Yeni" }));
@@ -52,6 +63,7 @@ describe("KitchenGroupsScreen", () => {
   });
 
   it("edits a group with its current values prefilled", async () => {
+    actions.updateKitchenGroup.mockResolvedValue({ ...MUTFAK, hasPackagingStage: true });
     const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "Mutfak düzenle" }));
@@ -60,16 +72,18 @@ describe("KitchenGroupsScreen", () => {
     await user.click(form.getByRole("checkbox", { name: "Paketleme aşaması" }));
     await user.click(form.getByRole("button", { name: "Kaydet" }));
 
-    expect(await screen.findByText("Hazırlanıyor › Paketleme › Hazırlandı")).toBeInTheDocument();
-    expect(toast.success).toHaveBeenCalledWith("Mutfak grubu güncellendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Mutfak grubu güncellendi"));
+    expect(actions.updateKitchenGroup).toHaveBeenCalledWith("1", { name: "Mutfak", hasCookingStage: false, hasPackagingStage: true });
   });
 
-  it("asks before deleting and then shows the empty message", async () => {
+  it("asks before deleting and calls the API once confirmed", async () => {
+    actions.deleteKitchenGroup.mockResolvedValue(undefined);
     const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "Mutfak sil" }));
     await user.click(await screen.findByRole("button", { name: "Sil" }));
 
-    await waitFor(() => expect(screen.getByText("Hiç mutfak grubu kaydı bulunamadı.")).toBeInTheDocument());
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Mutfak grubu silindi"));
+    expect(actions.deleteKitchenGroup).toHaveBeenCalledWith("1");
   });
 });

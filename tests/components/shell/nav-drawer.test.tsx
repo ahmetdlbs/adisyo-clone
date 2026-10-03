@@ -89,7 +89,6 @@ describe("NavDrawer", () => {
     setup();
 
     expect(screen.getByText("Yepyeni")).toBeInTheDocument();
-    expect(screen.getByText("Yeni")).toBeInTheDocument();
   });
 
   it("closes the drawer after a link is followed", async () => {

@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Quicksand } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const quicksand = Quicksand({
+const inter = Inter({
   subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-quicksand",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -15,13 +15,12 @@ export const metadata: Metadata = {
   title: { default: "Adisyon Merkezi", template: "%s | Adisyon Merkezi" },
   robots: { index: false, follow: false },
   other: { google: "notranslate" },
-  icons: {
-    icon: "/favicon.ico",
-  },
+  applicationName: "Adisyon Merkezi",
+  description: "Restoran ve kafeler için adisyon, sipariş, stok ve işletme yönetimi.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#dc2626",
+  themeColor: "#1d4ed8",
 };
 
 export default function RootLayout({
@@ -30,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={quicksand.variable}>
+    <html lang="tr" className={inter.variable}>
       <body className="min-h-screen overflow-x-hidden antialiased">
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="bottom-right" />

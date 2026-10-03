@@ -5,32 +5,6 @@
 /* Light-only theme: `dark:` utilities in vendored components stay inert until a `.dark` token set exists. */
 @custom-variant dark (&:is(.dark *));
 
-/* Euclid is the app font of the original product. The files live in /public/fonts (git-ignored);
-   when they are missing the stack falls back to Quicksand. */
-@font-face {
-  font-family: "Euclid";
-  src: url("/fonts/euclid-medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Euclid";
-  src: url("/fonts/euclid-semibold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Euclid";
-  src: url("/fonts/euclid-bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* ── Design tokens ───────────────────────────────────────────────────────────
    Single source of truth for colour. Components use the semantic utilities
    (bg-primary, text-muted-foreground, border-border, ...) and never raw hex. */
@@ -38,25 +12,25 @@
   --background: #ffffff;
   --foreground: #0f172a;
   /* App canvas: the cool-slate surface POS/dashboard cards sit on. */
-  --canvas: #f1f5f9;
+  --canvas: #f4f6fb;
 
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  /* Adisyon Merkezi brand red. 5.9:1 against white. */
-  --primary: #dc2626;
+  /* Corporate blue. 6.7:1 against white. Red is reserved for destructive actions. */
+  --primary: #1d4ed8;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
+  --secondary: #eef2f9;
   --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
+  --muted: #f1f4f9;
   /* 4.8:1 on white. */
   --muted-foreground: #64748b;
-  --accent: #e2e8f0;
-  --accent-foreground: #0f172a;
+  --accent: #e8eef8;
+  --accent-foreground: #1e3a8a;
 
-  /* Same red as --primary: one brand colour, disambiguated by the tinted-vs-solid button treatment, not by hue. */
+  /* Red is only ever a warning: delete, void, errors. */
   --destructive: #dc2626;
   --success: #15803d;
   --success-foreground: #ffffff;
@@ -64,15 +38,15 @@
   --warning-foreground: #ffffff;
 
   /* Icon tile in front of every definition screen's title. */
-  --section: #f97316;
+  --section: #1d4ed8;
   --section-foreground: #ffffff;
 
-  --border: #e2e8f0;
-  --input: #cbd5e1;
-  --ring: #dc2626;
+  --border: #e3e8f0;
+  --input: #c9d3e1;
+  --ring: #1d4ed8;
 
-  --chart-1: #dc2626;
-  --chart-2: #2563eb;
+  --chart-1: #1d4ed8;
+  --chart-2: #0891b2;
   --chart-3: #15803d;
   --chart-4: #d97706;
   --chart-5: #7c3aed;
@@ -81,10 +55,12 @@
   --chart-sales: #0d9488;
 
   --radius: 0.625rem;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 3px rgb(15 23 42 / 0.04);
 }
 
 @theme inline {
-  --font-sans: "Euclid", var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
 
   --color-background: var(--background);
@@ -137,9 +113,8 @@
     @apply font-sans;
   }
 
-  /* Euclid ships no 400 weight, so medium is the body baseline. */
   body {
-    @apply bg-background text-foreground text-[14px] leading-5 font-medium;
+    @apply bg-background text-foreground text-[14px] leading-5 font-normal antialiased;
   }
 
   button:not(:disabled),
@@ -155,7 +130,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {

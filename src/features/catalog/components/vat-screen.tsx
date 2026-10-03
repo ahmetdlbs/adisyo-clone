@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Percent, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable, type DataTableColumn } from "@/components/kit/data-table";
@@ -10,24 +9,28 @@ import { RowActions } from "@/components/kit/row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
-import { INITIAL_VAT_DEFINITIONS } from "../data/vat";
-import { MAX_VAT_DEFINITIONS, removeVat, saveVat, type VatDefinition, type VatFormValues } from "../model/vat";
+import { MAX_VAT_DEFINITIONS, type VatDefinition, type VatFormValues } from "../model/vat";
+import { createVat, deleteVat, updateVat } from "../server/vat-actions";
 import { VatFormDialog } from "./vat-form-dialog";
 
-export function VatScreen({ initialVats = INITIAL_VAT_DEFINITIONS }: { initialVats?: readonly VatDefinition[] }) {
-  const [vats, setVats] = useState(initialVats);
+export function VatScreen({ vats }: { vats: readonly VatDefinition[] }) {
   const dialog = useEntityDialog<VatDefinition>();
 
-  const handleSave = (values: VatFormValues) => {
-    // Computed outside the state updater: saveVat throws past the limit, which the disabled button prevents.
-    setVats(saveVat(vats, values, dialog.editing?.id ?? null, () => crypto.randomUUID()));
-    toast.success(dialog.editing ? "KDV grubu güncellendi" : "KDV grubu eklendi");
+  const handleSave = async (values: VatFormValues) => {
+    if (dialog.editing) {
+      await updateVat(dialog.editing.id, values);
+      toast.success("KDV grubu güncellendi");
+    } else {
+      await createVat(values);
+      toast.success("KDV grubu eklendi");
+    }
     dialog.close();
   };
 
   const handleDelete = (vat: VatDefinition) => {
-    setVats(removeVat(vats, vat.id));
-    toast.success("KDV grubu silindi");
+    deleteVat(vat.id)
+      .then(() => toast.success("KDV grubu silindi"))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "KDV grubu silinemedi"));
   };
 
   const columns: readonly DataTableColumn<VatDefinition>[] = [

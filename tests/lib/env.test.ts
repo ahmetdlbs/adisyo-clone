@@ -4,8 +4,7 @@ import { parseServerEnv } from "@/lib/env";
 
 const VALID = {
   SESSION_SECRET: "a-secret-that-is-at-least-32-characters-long",
-  DEMO_LOGIN_USER: "demo",
-  DEMO_LOGIN_PASSWORD: "hunter2-hunter2",
+  NEST_API_URL: "http://localhost:3001",
 };
 
 describe("parseServerEnv", () => {
@@ -19,12 +18,15 @@ describe("parseServerEnv", () => {
 
   it("names every missing variable in one error", () => {
     expect(() => parseServerEnv({})).toThrowError(/SESSION_SECRET/);
-    expect(() => parseServerEnv({})).toThrowError(/DEMO_LOGIN_USER/);
-    expect(() => parseServerEnv({})).toThrowError(/DEMO_LOGIN_PASSWORD/);
+    expect(() => parseServerEnv({})).toThrowError(/NEST_API_URL/);
   });
 
   it("rejects a session secret that is too short to sign with", () => {
     expect(() => parseServerEnv({ ...VALID, SESSION_SECRET: "short" })).toThrowError(/SESSION_SECRET/);
+  });
+
+  it("rejects a NEST_API_URL that is not a valid URL", () => {
+    expect(() => parseServerEnv({ ...VALID, NEST_API_URL: "not-a-url" })).toThrowError(/NEST_API_URL/);
   });
 
   it("never puts a configured value into the error message", () => {

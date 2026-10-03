@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Download, Plus, TrendingDown, Users } from "lucide-react";
 import { toast } from "sonner";
 import { DataTable, type DataTableColumn } from "@/components/kit/data-table";
@@ -11,15 +10,16 @@ import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { formatClock } from "@/lib/format";
 import { formatKurus } from "@/lib/money";
 import { notifyUnavailable } from "@/lib/notify";
-import { saveWastage, totalWastageCost, type Wastage, type WastageFormValues } from "../model/wastage";
+import { totalWastageCost, type Wastage, type WastageFormValues } from "../model/wastage";
+import { createWastage } from "../server/actions";
+import type { StockItem } from "@/features/stock/model/stock-item";
 import { WastageFormDialog } from "./wastage-form-dialog";
 
-export function WastageScreen({ initialWastages = [] }: { initialWastages?: readonly Wastage[] }) {
-  const [wastages, setWastages] = useState(initialWastages);
+export function WastageScreen({ wastages, stockItems = [] }: { wastages: readonly Wastage[]; stockItems?: readonly StockItem[] }) {
   const dialog = useEntityDialog<never>();
 
-  const handleSave = (values: WastageFormValues) => {
-    setWastages((current) => saveWastage(current, values, () => crypto.randomUUID()));
+  const handleSave = async (values: WastageFormValues) => {
+    await createWastage(values);
     toast.success("Zayi eklendi");
     dialog.close();
   };
@@ -68,7 +68,7 @@ export function WastageScreen({ initialWastages = [] }: { initialWastages?: read
         </PageBody>
       </PageCard>
 
-      <WastageFormDialog key={dialog.session} open={dialog.isOpen} onOpenChange={dialog.onOpenChange} onSave={handleSave} />
+      <WastageFormDialog key={dialog.session} open={dialog.isOpen} onOpenChange={dialog.onOpenChange} onSave={handleSave} stockItems={stockItems} />
     </PageContainer>
   );
 }

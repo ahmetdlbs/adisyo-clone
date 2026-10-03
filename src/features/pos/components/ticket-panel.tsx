@@ -1,11 +1,12 @@
 "use client";
 
-import { Gift, MoreVertical, Tag, Trash2, Zap } from "lucide-react";
+import { Gift, MoreVertical, ReceiptText, Tag, Trash2, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatKurus } from "@/lib/money";
 import {
+  chargeAmount,
   discountAmount,
   isLineSettled,
   lineTotal,
@@ -22,15 +23,18 @@ interface TicketPanelProps {
   onToggleComplimentary: (lineId: string) => void;
   onRemoveLine: (lineId: string) => void;
   onDiscount: () => void;
+  onToggleCharge: (which: "kuver" | "garsoniye", isOn: boolean) => void;
   onPay: () => void;
   onFastPay: () => void;
   onSave: () => void;
 }
 
 /** The bill: its lines, the totals and the pay / discount / save buttons. */
-export function TicketPanel({ order, onToggleComplimentary, onRemoveLine, onDiscount, onPay, onFastPay, onSave }: TicketPanelProps) {
+export function TicketPanel({ order, onToggleComplimentary, onRemoveLine, onDiscount, onToggleCharge, onPay, onFastPay, onSave }: TicketPanelProps) {
   const discount = discountAmount(order);
   const paid = paidTotal(order);
+  const charges = order.charges ?? [];
+  const hasCharge = (which: "kuver" | "garsoniye") => charges.some((charge) => charge.which === which);
 
   return (
     <aside aria-label="Adisyon" className="flex w-[390px] shrink-0 flex-col justify-between border-r bg-muted/40">
@@ -49,12 +53,19 @@ export function TicketPanel({ order, onToggleComplimentary, onRemoveLine, onDisc
 
       <div className="shrink-0 border-t p-3">
         <dl className="mb-3 grid grid-cols-2 gap-y-1 text-sm">
-          {discount > 0 && (
+          {(discount > 0 || charges.length > 0) && (
             <>
               <dt className="text-muted-foreground">Ara Toplam</dt>
               <dd className="text-right">{formatKurus(subtotal(order))}</dd>
-              <dt className="text-muted-foreground">İndirim (%{order.discountPercent})</dt>
-              <dd className="text-right text-destructive">−{formatKurus(discount)}</dd>
+              {discount > 0 && (
+                <>
+                  <dt className="text-muted-foreground">İndirim (%{order.discountPercent})</dt>
+                  <dd className="text-right text-destructive">−{formatKurus(discount)}</dd>
+                </>
+              )}
+              {charges.map((charge) => (
+                <ChargeRow key={charge.which} name={charge.kind === "percent" ? `${charge.name} (%${charge.amount})` : charge.name} amount={chargeAmount(order, charge)} />
+              ))}
             </>
           )}
           <dt className="text-[15px] font-bold">Toplam Tutar</dt>
@@ -69,23 +80,49 @@ export function TicketPanel({ order, onToggleComplimentary, onRemoveLine, onDisc
           )}
         </dl>
 
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="icon-xl" aria-label="İndirim" onClick={onDiscount}>
-            <Tag />
-          </Button>
-          <Button type="button" variant="success" size="xl" className="flex-1 font-bold" disabled={order.lines.length === 0} onClick={onPay}>
-            ÖDE {formatKurus(remaining(order))}
-          </Button>
-          <Button type="button" variant="outline" size="xl" disabled={order.lines.length === 0} onClick={onFastPay}>
-            <Zap />
-            HIZLI ÖDE
-          </Button>
-          <Button type="button" size="xl" className="font-bold" onClick={onSave}>
-            KAYDET
-          </Button>
+        <div className="grid gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="sm" className="justify-self-start text-muted-foreground" />}>
+              <ReceiptText />
+              Servis ücreti
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuItem onClick={() => onToggleCharge("kuver", !hasCharge("kuver"))}>{hasCharge("kuver") ? "Kuveri kaldır" : "Kuver ekle"}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onToggleCharge("garsoniye", !hasCharge("garsoniye"))}>
+                {hasCharge("garsoniye") ? "Garsoniyeyi kaldır" : "Garsoniye ekle"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="grid grid-cols-2 gap-2">
+            <Button type="button" variant="outline" size="xl" aria-label="İndirim" onClick={onDiscount}>
+              <Tag />
+              İndirim
+            </Button>
+            <Button type="button" variant="outline" size="xl" disabled={order.lines.length === 0} onClick={onFastPay}>
+              <Zap />
+              HIZLI ÖDE
+            </Button>
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <Button type="button" variant="success" size="xl" className="min-w-0 font-bold" disabled={order.lines.length === 0} onClick={onPay}>
+              <span className="truncate">ÖDE {formatKurus(remaining(order))}</span>
+            </Button>
+            <Button type="button" size="xl" className="px-6 font-bold" onClick={onSave}>
+              KAYDET
+            </Button>
+          </div>
         </div>
       </div>
     </aside>
+  );
+}
+
+function ChargeRow({ name, amount }: { name: string; amount: number }) {
+  return (
+    <>
+      <dt className="text-muted-foreground">{name}</dt>
+      <dd className="text-right">{formatKurus(amount)}</dd>
+    </>
   );
 }
 

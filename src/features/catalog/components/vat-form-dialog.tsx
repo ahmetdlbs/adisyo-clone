@@ -17,7 +17,7 @@ interface VatFormDialogProps {
   /** The definition being edited, or null when creating. */
   vat: VatDefinition | null;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: VatFormValues) => void;
+  onSave: (values: VatFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts from this definition's values. */

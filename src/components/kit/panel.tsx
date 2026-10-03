@@ -12,7 +12,7 @@ export function Panel({ title, aside, className, children, ...props }: PanelProp
   const headingId = useId();
 
   return (
-    <section aria-labelledby={headingId} className={cn("rounded-lg border bg-card p-5 shadow-sm", className)} {...props}>
+    <section aria-labelledby={headingId} className={cn("rounded-xl border bg-card p-5 shadow-(--shadow-card)", className)} {...props}>
       <header className="mb-4 flex items-center justify-between gap-3">
         <h2 id={headingId} className="text-sm font-semibold text-foreground">
           {title}

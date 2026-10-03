@@ -1,22 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RestaurantStatisticsScreen } from "@/features/reports/components/restaurant-statistics-screen";
-import { useNow } from "@/features/pos/hooks/use-now";
-import { createPosStore, PosProvider } from "@/features/pos/store/pos-provider";
-import { billLine, buildClosedOrder, buildPosState, localTime } from "../../../support/pos-fixtures";
+import { PosProvider } from "@/features/pos/store/pos-provider";
+import { buildDaySummary, buildPosSnapshot } from "../../../support/pos-fixtures";
 
-vi.mock("@/features/pos/hooks/use-now", () => ({ useNow: vi.fn() }));
-
-beforeEach(() => {
-  vi.mocked(useNow).mockReturnValue(localTime(20));
-});
+const DAY = buildDaySummary({ paidCount: 1, salesTotal: 10000, averageBill: 10000 });
 
 function setup() {
-  const initial = { ...buildPosState(), history: [buildClosedOrder({ id: "h1", closedAt: localTime(15), lines: [billLine("a", 10000)] })] };
   render(
-    <PosProvider store={createPosStore({ initial, storage: null })}>
-      <RestaurantStatisticsScreen />
+    <PosProvider initial={buildPosSnapshot()}>
+      <RestaurantStatisticsScreen day={DAY} />
     </PosProvider>
   );
   return userEvent.setup();

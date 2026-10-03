@@ -99,7 +99,7 @@ function NavLinkItem({ link, pathname, onNavigate, nested = false }: NavItemProp
 
   const content = (
     <>
-      {Icon && <Icon className={cn("size-5 shrink-0", link.highlighted ? "text-warning" : "text-muted-foreground")} />}
+      {Icon && <Icon className="size-5 shrink-0 text-muted-foreground" />}
       <span className="flex-1 truncate text-left">{link.label}</span>
       {link.badge && <Badge>{link.badge}</Badge>}
     </>
@@ -123,8 +123,7 @@ function NavLinkItem({ link, pathname, onNavigate, nested = false }: NavItemProp
       className={cn(
         buttonVariants({ variant: "ghost", size }),
         className,
-        isActive && "bg-accent font-semibold",
-        link.highlighted && "mt-2 bg-warning/10 hover:bg-warning/20"
+        isActive && "bg-accent font-semibold text-accent-foreground"
       )}
     >
       {content}

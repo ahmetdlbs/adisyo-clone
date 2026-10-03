@@ -58,14 +58,25 @@ A screen is a `features/<name>/` package with a thin `page.tsx` in front of it, 
 - Only cash may overpay (change is returned); a cancelled bill is kept in `history` with outcome `"cancelled"` so voids stay visible on the
   dashboard.
 
-## Auth
+## Auth & the backend (`api/`)
 
-- `features/auth/server/session.ts`: HS256 JWT in an httpOnly, SameSite=Lax cookie (12h). `getSession()` is what data code calls.
+- Identity, the App Store catalog and billing live in the sibling `api/` (NestJS + Prisma + PostgreSQL), not in this
+  app. `features/auth/server/credentials.ts` calls `api/`'s `POST /auth/login`; `api/` mints an HS256 JWT
+  (`sub`/`tenantId`/`role`/`name`/`email`) signed with the shared `SESSION_SECRET`.
+- `features/auth/server/session.ts` stores that token as-is in an httpOnly, SameSite=Lax cookie (12h) — this app never
+  signs a session itself, only verifies (`decryptSession`, same secret and algorithm) and reads it back
+  (`getSession()`, `getSessionToken()`).
+- `lib/api-client.ts` (`apiFetch`) is how every other server-side call reaches `api/`: it forwards the cookie's token
+  as `Authorization: Bearer <token>` and throws a typed `ApiError` on a non-2xx response.
 - Login/logout are Server Actions (`features/auth/server/actions.ts`); the login form works without JavaScript.
 - The post-login `next` URL is validated by `safeRedirectPath` (no open redirects). Keep it that way.
-- Env (`.env.local`, see `.env.example`): `DEMO_LOGIN_USER`, `DEMO_LOGIN_PASSWORD`, `SESSION_SECRET` (>= 32 chars). `lib/env.ts` fails
-  fast and never echoes a value.
-- Not built yet: registration/reset e-mail backend, login rate limiting, CSP with nonces.
+- Env (`.env.local`, see `.env.example`): `NEST_API_URL`, `SESSION_SECRET` (>= 32 chars, must match `api/`'s exactly).
+  `lib/env.ts` fails fast and never echoes a value.
+- The App Store screen (`features/app-store/`) is the one fully wired example: `(app)/app-store/page.tsx` fetches
+  `/apps-catalog` + `/billing/entitlements` from `api/`, and `purchaseApp` (Server Action) posts
+  `/billing/checkout` — payment is mocked there (`api/`'s `BillingService`), not here.
+- Not built yet: registration/reset e-mail backend, login rate limiting, CSP with nonces, entitlement gating on any
+  screen other than App Store, real payment/third-party integration code (mocked in `api/` by design for now).
 
 ## Checks (run before committing)
 

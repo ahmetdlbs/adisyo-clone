@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { FormDialog } from "@/components/kit/form-dialog";
 import { SelectField, TextField } from "@/components/kit/form-fields";
 import { EXPENSE_PAYMENT_METHODS, EXPENSE_TYPES, expenseFormSchema, type ExpenseFormInput, type ExpenseFormValues } from "../model/expense";
@@ -16,7 +17,7 @@ const localNow = () => {
 interface ExpenseFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: ExpenseFormValues) => void;
+  onSave: (values: ExpenseFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts blank each time. */
@@ -26,13 +27,22 @@ export function ExpenseFormDialog({ open, onOpenChange, onSave }: ExpenseFormDia
     defaultValues: { type: EXPENSE_TYPES[0], paymentMethod: "cash", amount: "", occurredAt: localNow(), note: "" },
   });
 
+  const submit = form.handleSubmit(async (values) => {
+    try {
+      await onSave(values);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Masraf eklenemedi");
+    }
+  });
+
   return (
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
       title="Ekle"
       description="Eklemek istediğiniz masraf bilgilerini giriniz"
-      onSubmit={form.handleSubmit(onSave)}
+      isSubmitting={form.formState.isSubmitting}
+      onSubmit={submit}
     >
       <div className="grid grid-cols-2 gap-4">
         <SelectField control={form.control} name="type" label="Masraf tipi" required options={TYPE_OPTIONS} />

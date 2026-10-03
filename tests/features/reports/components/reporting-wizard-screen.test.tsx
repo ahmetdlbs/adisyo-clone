@@ -2,28 +2,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReportingWizardScreen } from "@/features/reports/components/reporting-wizard-screen";
-import { useNow } from "@/features/pos/hooks/use-now";
-import { createPosStore, PosProvider } from "@/features/pos/store/pos-provider";
-import { billLine, buildClosedOrder, buildPosState, localTime } from "../../../support/pos-fixtures";
+import type { ProductSales } from "@/features/pos/model/stats";
 import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-vi.mock("@/features/pos/hooks/use-now", () => ({ useNow: vi.fn() }));
-
 beforeEach(() => {
   toast.info.mockClear();
-  vi.mocked(useNow).mockReturnValue(localTime(20));
 });
 
-function setup() {
-  const initial = { ...buildPosState(), history: [buildClosedOrder({ id: "h1", closedAt: localTime(15), lines: [billLine("p-cay", 5200, 2)] })] };
-  render(
-    <PosProvider store={createPosStore({ initial, storage: null })}>
-      <ReportingWizardScreen />
-    </PosProvider>
-  );
+const PRODUCTS: ProductSales[] = [{ productId: "p-cay", name: "p-cay", quantity: 2, amount: 10400 }];
+
+function setup(products: readonly ProductSales[] = PRODUCTS) {
+  render(<ReportingWizardScreen products={products} />);
   return userEvent.setup();
 }
 

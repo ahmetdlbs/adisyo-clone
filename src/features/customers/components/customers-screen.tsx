@@ -13,31 +13,36 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { usePagination } from "@/hooks/use-pagination";
-import { removeById } from "@/lib/collection";
 import { formatKurus } from "@/lib/money";
 import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
-import { customerSearchText, saveCustomer, totalBalance, type Customer, type CustomerFormValues } from "../model/customer";
+import { customerSearchText, totalBalance, type Customer, type CustomerFormValues } from "../model/customer";
+import { createCustomer, deleteCustomer, updateCustomer } from "../server/customer-actions";
 import { CustomerFormDialog } from "./customer-form-dialog";
 
-export function CustomersScreen({ initialCustomers = [] }: { initialCustomers?: readonly Customer[] }) {
-  const [customers, setCustomers] = useState(initialCustomers);
+export function CustomersScreen({ customers }: { customers: readonly Customer[] }) {
   const [query, setQuery] = useState("");
   const dialog = useEntityDialog<Customer>();
 
   const matching = filterByQuery(customers, query, customerSearchText);
   const pager = usePagination(matching);
 
-  const handleSave = (values: CustomerFormValues) => {
-    // saveCustomer throws when the phone number is taken; the form shows the message and stays open.
-    setCustomers(saveCustomer(customers, { id: dialog.editing?.id ?? null, ...values }, () => crypto.randomUUID()));
-    toast.success(dialog.editing ? "Müşteri güncellendi" : "Müşteri eklendi");
+  const handleSave = async (values: CustomerFormValues) => {
+    // createCustomer/updateCustomer throw when the phone number is taken; the form shows the message and stays open.
+    if (dialog.editing) {
+      await updateCustomer(dialog.editing.id, values);
+      toast.success("Müşteri güncellendi");
+    } else {
+      await createCustomer(values);
+      toast.success("Müşteri eklendi");
+    }
     dialog.close();
   };
 
   const handleDelete = (customer: Customer) => {
-    setCustomers((current) => removeById(current, customer.id));
-    toast.success("Müşteri silindi");
+    deleteCustomer(customer.id)
+      .then(() => toast.success("Müşteri silindi"))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Müşteri silinemedi"));
   };
 
   const handleQueryChange = (next: string) => {

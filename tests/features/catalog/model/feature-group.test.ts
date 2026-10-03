@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createFeatureGroupFormSchema, type FeatureGroup } from "@/features/catalog/model/feature-group";
-
-const GROUPS: readonly FeatureGroup[] = [
-  { id: "1", name: "Pişirme", selectionType: "single", useRecipeProduct: false, isRequired: true, options: [] },
-];
+import { featureGroupFormSchema } from "@/features/catalog/model/feature-group";
 
 const option = (overrides: Record<string, unknown> = {}) => ({ id: "o1", name: "Az pişmiş", price: "0", isDefault: false, ...overrides });
 const group = (overrides: Record<string, unknown> = {}) => ({
@@ -15,37 +11,27 @@ const group = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const schema = (editingId: string | null = null) => createFeatureGroupFormSchema(GROUPS, editingId);
-
-function issues(input: unknown, editingId: string | null = null) {
-  const result = schema(editingId).safeParse(input);
+function issues(input: unknown) {
+  const result = featureGroupFormSchema.safeParse(input);
   return result.success ? [] : result.error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message }));
 }
 
-describe("createFeatureGroupFormSchema", () => {
+describe("featureGroupFormSchema", () => {
   it("parses prices to numbers and trims names", () => {
-    const parsed = schema().parse(group({ name: " Ekstralar ", options: [option({ name: " Peynir ", price: "12.5" })] }));
+    const parsed = featureGroupFormSchema.parse(group({ name: " Ekstralar ", options: [option({ name: " Peynir ", price: "12.5" })] }));
 
     expect(parsed.name).toBe("Ekstralar");
     expect(parsed.options).toEqual([{ id: "o1", name: "Peynir", price: 12.5, isDefault: false }]);
   });
 
   it("drops blank option rows instead of failing on them", () => {
-    const parsed = schema().parse(group({ options: [option(), option({ id: "o2", name: "   " })] }));
+    const parsed = featureGroupFormSchema.parse(group({ options: [option(), option({ id: "o2", name: "   " })] }));
 
     expect(parsed.options.map((entry) => entry.name)).toEqual(["Az pişmiş"]);
   });
 
   it("requires a group name", () => {
     expect(issues(group({ name: "" }))).toEqual([{ path: "name", message: "Özellik grup ismi zorunludur" }]);
-  });
-
-  it("rejects a group name that is already taken", () => {
-    expect(issues(group({ name: "pişirme" }))).toEqual([{ path: "name", message: "Bu özellik grubu zaten tanımlı" }]);
-  });
-
-  it("lets the group being edited keep its name", () => {
-    expect(issues(group({ name: "Pişirme" }), "1")).toEqual([]);
   });
 
   it("needs at least one named option", () => {
@@ -70,7 +56,7 @@ describe("createFeatureGroupFormSchema", () => {
   });
 
   it("treats an empty price as free", () => {
-    expect(schema().parse(group({ options: [option({ price: "" })] })).options[0]?.price).toBe(0);
+    expect(featureGroupFormSchema.parse(group({ options: [option({ price: "" })] })).options[0]?.price).toBe(0);
   });
 
   it("allows only one default option in a single-choice group", () => {

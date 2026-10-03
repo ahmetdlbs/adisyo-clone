@@ -3,6 +3,7 @@ import {
   addProduct,
   applyPayment,
   canClose,
+  chargesTotal,
   decrementProduct,
   discountAmount,
   dispatchDelivery,
@@ -41,6 +42,8 @@ function blank(overrides: Partial<Order> = {}): Order {
     waiter: "ahmet",
     openedAt: NOW.toISOString(),
     stage: "preparing",
+    status: "open",
+    closedAt: null,
     lines: [],
     discountPercent: 0,
     payments: [],
@@ -61,7 +64,7 @@ describe("adding and removing products", () => {
     const order = addProduct(blank(), CAY, "l1");
 
     expect(order.lines).toEqual([
-      { id: "l1", productId: "p-cay", name: "Çay", unitPrice: 5200, quantity: 1, isComplimentary: false },
+      { id: "l1", productId: "p-cay", portionId: "p-cay", name: "Çay", unitPrice: 5200, quantity: 1, isComplimentary: false },
     ]);
   });
 
@@ -352,5 +355,33 @@ describe("elapsedLabel", () => {
 
   it("never shows a negative time when the clock is behind", () => {
     expect(elapsedLabel(new Date(NOW.getTime() + 60_000).toISOString(), NOW)).toBe("0 dk");
+  });
+});
+
+describe("service charges", () => {
+  const kuver = { which: "kuver", name: "Kuver", kind: "amount", amount: 2500 } as const;
+  const garsoniye = { which: "garsoniye", name: "Garsoniye", kind: "percent", amount: 10 } as const;
+
+  it("adds a fixed charge to the bill as is", () => {
+    const order = withLines({ charges: [kuver] });
+    expect(chargesTotal(order)).toBe(2500);
+    expect(orderTotal(order)).toBe(26200 + 2500);
+  });
+
+  it("takes a percent charge on the subtotal after the discount", () => {
+    const order = withLines({ discountPercent: 10, charges: [garsoniye] });
+    // 26200 - 10% = 23580; garsoniye 10% = 2358
+    expect(chargesTotal(order)).toBe(2358);
+    expect(orderTotal(order)).toBe(23580 + 2358);
+  });
+
+  it("keeps them in what is still due, so the bill cannot close until they are paid", () => {
+    const order = pay(withLines({ charges: [kuver] }), "cash", 26200).order;
+    expect(remaining(order)).toBe(2500);
+    expect(canClose(order)).toBe(false);
+  });
+
+  it("is unchanged for a bill without charges", () => {
+    expect(chargesTotal(withLines())).toBe(0);
   });
 });

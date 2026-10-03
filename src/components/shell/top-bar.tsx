@@ -2,6 +2,7 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 import { useRouter } from "next/navigation";
 import { CreditCard, Headphones, LogOut, Megaphone, Menu, RotateCw, Settings, User, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,12 +28,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const router = useRouter();
 
   return (
-    <header className="z-20 flex h-14 shrink-0 items-center justify-between border-b bg-background px-4 select-none">
+    <header className="z-20 flex h-14 shrink-0 items-center justify-between border-b bg-card px-4 shadow-(--shadow-card) select-none">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon-lg" aria-label="Menüyü aç" onClick={onMenuClick}>
           <Menu />
         </Button>
-        <span className="text-[17px] font-semibold">{DEMO_IDENTITY.name}</span>
+        <BrandLogo size="sm" />
+        <span className="hidden border-l pl-3 text-sm font-medium text-muted-foreground md:inline">{DEMO_IDENTITY.name}</span>
       </div>
 
       <div className="flex items-center gap-2">

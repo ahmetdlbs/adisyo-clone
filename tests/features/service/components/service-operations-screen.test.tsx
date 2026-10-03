@@ -7,10 +7,18 @@ import type { ServiceSettings } from "@/features/service/model/service-charge";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-beforeEach(() => toast.success.mockClear());
+const actions = vi.hoisted(() => ({ saveKuver: vi.fn(), saveGarsoniye: vi.fn() }));
+vi.mock("@/features/service/server/actions", () => actions);
 
-function setup(initial?: ServiceSettings) {
-  render(<ServiceOperationsScreen initialSettings={initial} />);
+beforeEach(() => {
+  toast.success.mockClear();
+  toast.error.mockClear();
+  actions.saveKuver.mockReset().mockResolvedValue(undefined);
+  actions.saveGarsoniye.mockReset().mockResolvedValue(undefined);
+});
+
+function setup(settings?: ServiceSettings) {
+  render(<ServiceOperationsScreen settings={settings} />);
   return userEvent.setup();
 }
 
@@ -35,6 +43,7 @@ describe("ServiceOperationsScreen", () => {
 
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Kuver ayarları kaydedildi"));
     expect(kuverCard().getByRole("switch", { name: "Kuver ücreti siparişe otomatik eklensin" })).toBeChecked();
+    expect(actions.saveKuver).toHaveBeenCalledWith(expect.objectContaining({ name: "Kuver", kind: "amount", amount: 1000 }));
   });
 
   it("defines the garsoniye charge as a percent", async () => {
@@ -47,6 +56,7 @@ describe("ServiceOperationsScreen", () => {
     await user.click(garsoniyeCard().getByRole("button", { name: "Kaydet" }));
 
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Garsoniye ayarları kaydedildi"));
+    expect(actions.saveGarsoniye).toHaveBeenCalledWith(expect.objectContaining({ name: "Garsoniye", kind: "percent", amount: 10 }));
   });
 
   it("says what is missing before saving", async () => {
@@ -56,6 +66,18 @@ describe("ServiceOperationsScreen", () => {
 
     expect(await screen.findByText("Ad zorunludur")).toBeInTheDocument();
     expect(screen.getByText("Geçerli bir tutar giriniz")).toBeInTheDocument();
+    expect(actions.saveKuver).not.toHaveBeenCalled();
+  });
+
+  it("shows an error toast when saving fails", async () => {
+    actions.saveKuver.mockRejectedValue(new Error("Kuver ayarları kaydedilemedi"));
+    const user = setup();
+
+    await user.type(kuverCard().getByRole("textbox", { name: "Kuver Adı" }), "Kuver");
+    await user.type(kuverCard().getByRole("textbox", { name: "Kuver Tutarı" }), "10");
+    await user.click(kuverCard().getByRole("button", { name: "Kaydet" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Kuver ayarları kaydedilemedi"));
   });
 
   it("starts from an existing definition and lets its auto-add be turned off", async () => {

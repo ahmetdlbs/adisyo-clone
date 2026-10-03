@@ -26,11 +26,11 @@ interface ManageListDialogProps {
   schema: z.ZodType<{ name: string }, z.ZodTypeDef, { name: string }>;
   items: readonly NamedItem[];
   /** Creates (id null) or renames an item. Throw an Error to reject it; the message is shown on the field. */
-  onSave: (input: { id: string | null; name: string }) => void;
+  onSave: (input: { id: string | null; name: string }) => Promise<void>;
   /** Throw an Error to refuse; the message is shown as a toast. */
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
   /** When given, each row gets up/down buttons. */
-  onMove?: (id: string, offset: -1 | 1) => void;
+  onMove?: (id: string, offset: -1 | 1) => Promise<void>;
 }
 
 /** A small list editor in a dialog: rename, delete and (optionally) reorder named items, with an add/rename form. */
@@ -42,9 +42,9 @@ export function ManageListDialog({ open, ...props }: ManageListDialogProps) {
 function ManageListBody({ onOpenChange, title, description, noun, schema, items, onSave, onDelete, onMove }: Omit<ManageListDialogProps, "open">) {
   const [editing, setEditing] = useState<NamedItem | null>(null);
 
-  const run = (action: () => void) => {
+  const run = async (action: () => Promise<void>) => {
     try {
-      action();
+      await action();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "İşlem yapılamadı");
     }
@@ -95,9 +95,9 @@ interface NameFormProps {
 function NameForm({ editing, noun, schema, onSave, onDone }: NameFormProps) {
   const form = useForm<{ name: string }>({ resolver: zodResolver(schema), defaultValues: { name: editing?.name ?? "" } });
 
-  const submit = form.handleSubmit(({ name }) => {
+  const submit = form.handleSubmit(async ({ name }) => {
     try {
-      onSave({ id: editing?.id ?? null, name });
+      await onSave({ id: editing?.id ?? null, name });
       form.reset({ name: "" });
       onDone();
     } catch (error) {

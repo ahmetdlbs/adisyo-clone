@@ -11,10 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNow } from "@/features/pos/hooks/use-now";
 import { notifyUnavailable } from "@/lib/notify";
-import { productSalesToday, type ProductSales } from "@/features/pos/model/stats";
-import { usePosState } from "@/features/pos/store/pos-provider";
+import type { ProductSales } from "@/features/pos/model/stats";
 
 type View = "table" | "chart";
 type DrawerTab = "columns" | "filters";
@@ -36,16 +34,14 @@ const AVAILABLE_FIELDS = ["Tarih", "Ay ve Yıl", "Ay", "Hafta Günü", "Kategori
  * as they were there (no drag-and-drop, nothing it does actually changes the report); only export/save, which
  * the original also left without a handler, say plainly that they are not available.
  */
-export function ReportingWizardScreen() {
+export function ReportingWizardScreen({ products }: { products: readonly ProductSales[] }) {
   const [view, setView] = useState<View>("table");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<DrawerTab>("columns");
   const [showQuantity, setShowQuantity] = useState(true);
   const [showOrderCount, setShowOrderCount] = useState(false);
   const [showGrossAmount, setShowGrossAmount] = useState(false);
-  const state = usePosState();
-  const now = useNow();
-  const rows = now ? productSalesToday(state, now) : [];
+  const rows = products;
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-auto p-6">
@@ -102,7 +98,7 @@ export function ReportingWizardScreen() {
 
         <div className="p-4">
           {view === "table" ? (
-            <DataTable columns={COLUMNS} rows={rows} getRowId={(row) => row.productId} caption="Ürün bazlı satış" emptyMessage="Bugün satılan ürün yok." />
+            <DataTable columns={COLUMNS} rows={rows} getRowId={(row) => row.productId ?? `deleted:${row.name}`} caption="Ürün bazlı satış" emptyMessage="Bugün satılan ürün yok." />
           ) : (
             <ProductSalesChart rows={rows} />
           )}

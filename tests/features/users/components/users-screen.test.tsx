@@ -7,7 +7,13 @@ import type { User } from "@/features/users/model/user";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-beforeEach(() => toast.success.mockClear());
+const actions = vi.hoisted(() => ({ createStaffMember: vi.fn() }));
+vi.mock("@/features/users/server/actions", () => actions);
+
+beforeEach(() => {
+  toast.success.mockClear();
+  actions.createStaffMember.mockReset();
+});
 
 const AHMET: User = {
   id: "u1",
@@ -24,7 +30,7 @@ const AHMET: User = {
 };
 
 function setup(users: User[] = []) {
-  render(<UsersScreen initialUsers={users} />);
+  render(<UsersScreen users={users} />);
   return userEvent.setup();
 }
 
@@ -49,7 +55,8 @@ describe("UsersScreen", () => {
     expect(screen.getByRole("row", { name: /Ahmet Can/ })).toHaveTextContent("- / -");
   });
 
-  it("adds a user and shows them in the list", async () => {
+  it("calls createStaffMember with the entered values and shows a success toast", async () => {
+    actions.createStaffMember.mockResolvedValue(AHMET);
     const user = setup();
 
     const dialog = await openAdd(user);
@@ -58,11 +65,11 @@ describe("UsersScreen", () => {
     await user.type(dialog.getByLabelText("Şifre"), "gizli123");
     await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
-    await waitFor(() => expect(screen.getByRole("row", { name: /Zeynep Aksoy/ })).toBeInTheDocument());
-    expect(toast.success).toHaveBeenCalledWith("Kullanıcı eklendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Kullanıcı eklendi"));
+    expect(actions.createStaffMember).toHaveBeenCalledWith(expect.objectContaining({ name: "Zeynep Aksoy", phone: "0533 444 55 66" }));
   });
 
-  it("says what is missing", async () => {
+  it("says what is missing, never calling createStaffMember", async () => {
     const user = setup();
 
     const dialog = await openAdd(user);
@@ -71,9 +78,11 @@ describe("UsersScreen", () => {
     expect(await screen.findByText("Ad Soyad zorunludur")).toBeInTheDocument();
     expect(screen.getByText("Telefon numarası zorunludur")).toBeInTheDocument();
     expect(screen.getByText("Şifre en az 4 karakter olmalıdır")).toBeInTheDocument();
+    expect(actions.createStaffMember).not.toHaveBeenCalled();
   });
 
-  it("shows the model's reason on the field when the phone number is already used", async () => {
+  it("shows the API's reason on the field when the phone number is already used", async () => {
+    actions.createStaffMember.mockRejectedValue(new Error("Bu telefon numarası başka bir kullanıcıda kayıtlı"));
     const user = setup([AHMET]);
 
     const dialog = await openAdd(user);
@@ -85,7 +94,8 @@ describe("UsersScreen", () => {
     expect(await screen.findByText("Bu telefon numarası başka bir kullanıcıda kayıtlı")).toBeInTheDocument();
   });
 
-  it("can turn the login-blocked and pin switches on", async () => {
+  it("can turn the login-blocked and pin switches on and includes them in the call", async () => {
+    actions.createStaffMember.mockResolvedValue(AHMET);
     const user = setup();
 
     const dialog = await openAdd(user);
@@ -98,6 +108,8 @@ describe("UsersScreen", () => {
     await user.type(dialog.getByLabelText("Şifre"), "gizli123");
     await user.click(dialog.getByRole("button", { name: "Ekle" }));
 
-    await waitFor(() => expect(screen.getByRole("row", { name: /Zeynep Aksoy/ })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(actions.createStaffMember).toHaveBeenCalledWith(expect.objectContaining({ blockLogin: true, usePin: true }))
+    );
   });
 });

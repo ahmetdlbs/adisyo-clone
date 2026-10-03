@@ -1,8 +1,31 @@
 import type { Kurus } from "@/lib/money";
-import { lineTotal, orderTotal, PAYMENT_METHODS, type PaymentMethod } from "./order";
-import { isTableOccupied, type ClosedOrder, type PosState } from "./pos-state";
+import type { PaymentMethod } from "./order";
+import { isTableOccupied, type FloorAndOrders } from "./pos-state";
 
-const HOURS_IN_DAY = 24;
+export interface Occupancy {
+  occupied: number;
+  free: number;
+  total: number;
+  /** Whole percent; 0 when no table is defined. */
+  percent: number;
+}
+
+/** How many of the defined tables have something on their bill right now. Computed from the live snapshot. */
+export function tableOccupancy(state: FloorAndOrders): Occupancy {
+  const total = state.tables.length;
+  const occupied = state.tables.filter((table) => isTableOccupied(state, table.id)).length;
+  return { occupied, free: total - occupied, total, percent: total === 0 ? 0 : Math.round((occupied / total) * 100) };
+}
+
+/** Open bills with something on them; a bill that was just opened and is still empty is not counted. */
+export const openBillCount = (state: Pick<FloorAndOrders, "orders">): number =>
+  state.orders.filter((order) => order.lines.length > 0).length;
+
+/** "09:00" for hour 9. */
+export const hourLabel = (hour: number): string => `${String(hour).padStart(2, "0")}:00`;
+
+// The shapes below mirror api/'s /reports responses (src/reports/report-calc.ts) — the aggregation itself
+// now runs server-side, over every closed order in the database, not just what a browser tab has seen.
 
 export interface HourlySales {
   hour: number;
@@ -12,11 +35,11 @@ export interface HourlySales {
 export interface MethodSales {
   method: PaymentMethod;
   amount: Kurus;
-  /** Whole percent of everything settled today. */
+  /** Whole percent of everything settled that day. */
   share: number;
 }
 
-/** What the dashboard shows about today: bills that left the floor on the viewer's calendar day. */
+/** What the dashboard shows about today: bills that left the floor on the calendar day the report covers. */
 export interface DaySummary {
   paidCount: number;
   /** Sum of the paid bills, discounts already taken off. */
@@ -32,97 +55,21 @@ export interface DaySummary {
   byHour: readonly HourlySales[];
   /** The busiest hour (the earliest on a tie), or null when nothing was sold. */
   peakHour: HourlySales | null;
+  /** Recorded expenses of the business day. */
+  expenseTotal: Kurus;
+  /** Cost of the day's fire (zayi). */
+  wastageTotal: Kurus;
+  /** What the portions sold cost to make (their Maliyet Tutarı × units). */
+  costOfGoods: Kurus;
+  /** What the stock on hand is worth (quantity × unit cost). */
+  stockValue: Kurus;
 }
-
-export interface Occupancy {
-  occupied: number;
-  free: number;
-  total: number;
-  /** Whole percent; 0 when no table is defined. */
-  percent: number;
-}
-
-const isSameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-
-const sumTotals = (entries: readonly ClosedOrder[]): Kurus => entries.reduce((sum, entry) => sum + orderTotal(entry.order), 0);
-
-function salesByMethod(paid: readonly ClosedOrder[]): MethodSales[] {
-  const totals = paid
-    .flatMap((entry) => entry.order.payments)
-    .reduce<Partial<Record<PaymentMethod, Kurus>>>((sums, payment) => ({ ...sums, [payment.method]: (sums[payment.method] ?? 0) + payment.amount }), {});
-
-  const settled = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
-
-  return PAYMENT_METHODS.map((method) => ({ method, amount: totals[method] ?? 0 }))
-    .filter((entry) => entry.amount > 0)
-    .map((entry) => ({ ...entry, share: Math.round((entry.amount / settled) * 100) }))
-    .sort((a, b) => b.amount - a.amount);
-}
-
-function salesByHour(paid: readonly ClosedOrder[]): HourlySales[] {
-  return Array.from({ length: HOURS_IN_DAY }, (_, hour) => ({
-    hour,
-    amount: sumTotals(paid.filter((entry) => new Date(entry.closedAt).getHours() === hour)),
-  }));
-}
-
-/** Every bill (paid or cancelled) that left the floor on the viewer's calendar day. */
-export const closedOrdersToday = (state: PosState, now: Date): readonly ClosedOrder[] =>
-  state.history.filter((entry) => isSameDay(new Date(entry.closedAt), now));
-
-export function summarizeDay(state: PosState, now: Date): DaySummary {
-  const closedToday = closedOrdersToday(state, now);
-  const paid = closedToday.filter((entry) => entry.outcome === "paid");
-  const cancelled = closedToday.filter((entry) => entry.outcome === "cancelled");
-  const byHour = salesByHour(paid);
-  const salesTotal = sumTotals(paid);
-
-  return {
-    paidCount: paid.length,
-    salesTotal,
-    averageBill: paid.length === 0 ? 0 : Math.round(salesTotal / paid.length),
-    cancelledCount: cancelled.length,
-    cancelledTotal: sumTotals(cancelled),
-    byMethod: salesByMethod(paid),
-    byHour,
-    peakHour: byHour.reduce<HourlySales | null>((peak, bucket) => (bucket.amount > (peak?.amount ?? 0) ? bucket : peak), null),
-  };
-}
-
-/** How many of the defined tables have something on their bill right now. */
-export function tableOccupancy(state: PosState): Occupancy {
-  const total = state.tables.length;
-  const occupied = state.tables.filter((table) => isTableOccupied(state, table.id)).length;
-  return { occupied, free: total - occupied, total, percent: total === 0 ? 0 : Math.round((occupied / total) * 100) };
-}
-
-/** Open bills with something on them; a bill that was just opened and is still empty is not counted. */
-export const openBillCount = (state: PosState): number => state.orders.filter((order) => order.lines.length > 0).length;
-
-/** "09:00" for hour 9. */
-export const hourLabel = (hour: number): string => `${String(hour).padStart(2, "0")}:00`;
 
 export interface ProductSales {
-  productId: string;
+  productId: string | null;
   name: string;
   /** How many units, complimentary ones included. */
   quantity: number;
   /** What they brought in; a complimentary line adds to `quantity` but never to `amount`. */
   amount: Kurus;
-}
-
-/** Units sold and revenue per product today, largest revenue first. Cancelled bills do not count as sales. */
-export function productSalesToday(state: PosState, now: Date): readonly ProductSales[] {
-  const paidToday = closedOrdersToday(state, now).filter((entry) => entry.outcome === "paid");
-  const totals = new Map<string, ProductSales>();
-
-  for (const entry of paidToday) {
-    for (const line of entry.order.lines) {
-      const current = totals.get(line.productId) ?? { productId: line.productId, name: line.name, quantity: 0, amount: 0 };
-      totals.set(line.productId, { ...current, quantity: current.quantity + line.quantity, amount: current.amount + lineTotal(line) });
-    }
-  }
-
-  return [...totals.values()].sort((a, b) => b.amount - a.amount);
 }

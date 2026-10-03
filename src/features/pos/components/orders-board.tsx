@@ -12,7 +12,7 @@ import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
 import { useNow } from "../hooks/use-now";
 import { formatKurus } from "@/lib/money";
-import { dispatchDelivery, isLate, markReady, orderTotal, type Order, type OrderStage, type OrderType } from "../model/order";
+import { isLate, orderTotal, type Order, type OrderStage, type OrderType } from "../model/order";
 import { orderTitle } from "../model/pos-state";
 import { usePosActions, usePosState } from "../store/pos-provider";
 
@@ -97,15 +97,15 @@ function OrderCard({ order, title, now, onOpen, onPay, onCancel }: OrderCardProp
   // What moves the order along from where it is: mark it ready, then (for delivery) send it out.
   const advance =
     order.stage === "preparing"
-      ? { label: "Hazır işaretle", icon: Check, change: markReady }
+      ? { label: "Hazır işaretle", icon: Check, run: () => actions.markReady(order.id) }
       : order.type === "delivery" && order.stage === "ready"
-        ? { label: "Teslimata çıkar", icon: Truck, change: dispatchDelivery }
+        ? { label: "Teslimata çıkar", icon: Truck, run: () => actions.dispatchDelivery(order.id) }
         : null;
 
-  const runAdvance = () => {
+  const runAdvance = async () => {
     if (!advance) return;
     try {
-      actions.updateOrder(order.id, advance.change);
+      await advance.run();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "İşlem yapılamadı");
     }

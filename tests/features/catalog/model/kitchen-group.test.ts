@@ -1,36 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { createKitchenGroupFormSchema, kitchenStages, type KitchenGroup } from "@/features/catalog/model/kitchen-group";
+import { kitchenGroupFormSchema, kitchenStages } from "@/features/catalog/model/kitchen-group";
 
-const GROUPS: readonly KitchenGroup[] = [{ id: "1", name: "Mutfak", hasCookingStage: false, hasPackagingStage: false }];
-
-function messages(input: unknown, editingId: string | null = null): string[] {
-  const result = createKitchenGroupFormSchema(GROUPS, editingId).safeParse(input);
+function messages(input: unknown): string[] {
+  const result = kitchenGroupFormSchema.safeParse(input);
   return result.success ? [] : result.error.issues.map((issue) => issue.message);
 }
 
-describe("createKitchenGroupFormSchema", () => {
+describe("kitchenGroupFormSchema", () => {
   it("accepts a new group and trims its name", () => {
-    const result = createKitchenGroupFormSchema(GROUPS, null).parse({
-      name: "  Bar ",
+    expect(kitchenGroupFormSchema.parse({ name: "  Bar ", hasCookingStage: true, hasPackagingStage: false })).toEqual({
+      name: "Bar",
       hasCookingStage: true,
       hasPackagingStage: false,
     });
-
-    expect(result).toEqual({ name: "Bar", hasCookingStage: true, hasPackagingStage: false });
   });
 
   it("requires a name", () => {
     expect(messages({ name: " ", hasCookingStage: false, hasPackagingStage: false })).toEqual(["Grup adı zorunludur"]);
-  });
-
-  it("rejects a name that is already taken, ignoring Turkish case", () => {
-    expect(messages({ name: "MUTFAK", hasCookingStage: false, hasPackagingStage: false })).toEqual([
-      "Bu mutfak grubu zaten tanımlı",
-    ]);
-  });
-
-  it("lets the group being edited keep its own name", () => {
-    expect(messages({ name: "Mutfak", hasCookingStage: true, hasPackagingStage: false }, "1")).toEqual([]);
   });
 
   it("limits the name length", () => {

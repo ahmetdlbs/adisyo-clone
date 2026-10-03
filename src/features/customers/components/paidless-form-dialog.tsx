@@ -12,7 +12,7 @@ interface PaidlessFormDialogProps {
   paidless: Paidless | null;
   onOpenChange: (open: boolean) => void;
   /** Throw an Error to refuse the entry; its message is shown on the first-name field. */
-  onSave: (values: PaidlessFormValues) => void;
+  onSave: (values: PaidlessFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts from this person's values. */
@@ -22,9 +22,9 @@ export function PaidlessFormDialog({ open, paidless, onOpenChange, onSave }: Pai
     defaultValues: { firstName: paidless?.firstName ?? "", lastName: paidless?.lastName ?? "", title: paidless?.title ?? "" },
   });
 
-  const submit = form.handleSubmit((values) => {
+  const submit = form.handleSubmit(async (values) => {
     try {
-      onSave(values);
+      await onSave(values);
     } catch (error) {
       form.setError("firstName", { message: error instanceof Error ? error.message : "Kaydedilemedi" });
     }
@@ -37,6 +37,7 @@ export function PaidlessFormDialog({ open, paidless, onOpenChange, onSave }: Pai
       title="Ödenmez Ekle"
       description={paidless ? "Ödenmez bilgilerini güncelleyiniz." : "Yeni eklemek istediğiniz ödenmez bilgilerini giriniz."}
       submitLabel={paidless ? "Güncelle" : "Ekle"}
+      isSubmitting={form.formState.isSubmitting}
       onSubmit={submit}
     >
       <div className="grid grid-cols-2 gap-4">

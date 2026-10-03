@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Info, Save, User } from "lucide-react";
 import { toast } from "sonner";
 import { PageBody, PageCard, PageContainer, PageToolbar } from "@/components/kit/page";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { filterByQuery } from "@/lib/search";
 import { PERMISSIONS, RIGHTS_ROLES, togglePermission, type PermissionGrants } from "../model/permission";
+import { saveGrants } from "../server/actions";
 
 interface RightsScreenProps {
   initialGrants?: PermissionGrants;
@@ -19,6 +20,18 @@ interface RightsScreenProps {
 export function RightsScreen({ initialGrants = {} }: RightsScreenProps) {
   const [grants, setGrants] = useState(initialGrants);
   const [query, setQuery] = useState("");
+  const [isSaving, startSaving] = useTransition();
+
+  const handleSave = () => {
+    startSaving(async () => {
+      try {
+        await saveGrants(grants);
+        toast.success("Yetkiler kaydedildi");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Yetkiler kaydedilemedi");
+      }
+    });
+  };
 
   const permissions = filterByQuery(PERMISSIONS, query, (permission) => `${permission.title} ${permission.description}`);
 
@@ -31,7 +44,7 @@ export function RightsScreen({ initialGrants = {} }: RightsScreenProps) {
           title="Yetki / İzin Ekranı"
           description="Kullanıcılarınızın yetkilerini/izinlerini buradan güncelleyebilirsiniz"
           actions={
-            <Button onClick={() => toast.success("Yetkiler kaydedildi")}>
+            <Button onClick={handleSave} disabled={isSaving}>
               <Save />
               Kaydet
             </Button>

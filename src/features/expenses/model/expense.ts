@@ -44,11 +44,6 @@ export const expenseFormSchema = z.object({
 export type ExpenseFormInput = z.input<typeof expenseFormSchema>;
 export type ExpenseFormValues = z.output<typeof expenseFormSchema>;
 
-/** Records a new expense. Returns a new array. */
-export function saveExpense(expenses: readonly Expense[], values: ExpenseFormValues, newId: () => string): readonly Expense[] {
-  return [...expenses, { id: newId(), ...values }];
-}
-
 export const totalExpenses = (expenses: readonly Expense[]): Kurus => expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
 /** What a search box looks through. */

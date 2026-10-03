@@ -17,7 +17,7 @@ interface DiscountFormDialogProps {
   /** The discount being edited, or null when creating. */
   discount: Discount | null;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: DiscountFormValues) => void;
+  onSave: (values: DiscountFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts from this discount's values. */

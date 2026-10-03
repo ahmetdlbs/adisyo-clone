@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Plus, Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -11,24 +10,28 @@ import { RowActions } from "@/components/kit/row-actions";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
-import { removeById, upsertById } from "@/lib/collection";
-import { INITIAL_UNITS } from "../data/units";
 import type { Unit, UnitFormValues } from "../model/unit";
+import { createUnit, deleteUnit, updateUnit } from "../server/unit-actions";
 import { UnitFormDialog } from "./unit-form-dialog";
 
-export function UnitsScreen({ initialUnits = INITIAL_UNITS }: { initialUnits?: readonly Unit[] }) {
-  const [units, setUnits] = useState(initialUnits);
+export function UnitsScreen({ units }: { units: readonly Unit[] }) {
   const dialog = useEntityDialog<Unit>();
 
-  const handleSave = (values: UnitFormValues) => {
-    setUnits((current) => upsertById(current, { id: dialog.editing?.id ?? crypto.randomUUID(), ...values }));
-    toast.success(dialog.editing ? "Birim güncellendi" : "Birim eklendi");
+  const handleSave = async (values: UnitFormValues) => {
+    if (dialog.editing) {
+      await updateUnit(dialog.editing.id, values);
+      toast.success("Birim güncellendi");
+    } else {
+      await createUnit(values);
+      toast.success("Birim eklendi");
+    }
     dialog.close();
   };
 
   const handleDelete = (unit: Unit) => {
-    setUnits((current) => removeById(current, unit.id));
-    toast.success("Birim silindi");
+    deleteUnit(unit.id)
+      .then(() => toast.success("Birim silindi"))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Birim silinemedi"));
   };
 
   const columns: readonly DataTableColumn<Unit>[] = [
@@ -76,7 +79,6 @@ export function UnitsScreen({ initialUnits = INITIAL_UNITS }: { initialUnits?: r
         key={dialog.session}
         open={dialog.isOpen}
         unit={dialog.editing}
-        units={units}
         onOpenChange={dialog.onOpenChange}
         onSave={handleSave}
       />

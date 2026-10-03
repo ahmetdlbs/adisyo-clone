@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -12,24 +11,28 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/config/routes";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
-import { removeById, upsertById } from "@/lib/collection";
-import { INITIAL_KITCHEN_GROUPS } from "../data/kitchen-groups";
 import { kitchenStages, type KitchenGroup, type KitchenGroupFormValues } from "../model/kitchen-group";
+import { createKitchenGroup, deleteKitchenGroup, updateKitchenGroup } from "../server/kitchen-group-actions";
 import { KitchenGroupFormDialog } from "./kitchen-group-form-dialog";
 
-export function KitchenGroupsScreen({ initialGroups = INITIAL_KITCHEN_GROUPS }: { initialGroups?: readonly KitchenGroup[] }) {
-  const [groups, setGroups] = useState(initialGroups);
+export function KitchenGroupsScreen({ groups }: { groups: readonly KitchenGroup[] }) {
   const dialog = useEntityDialog<KitchenGroup>();
 
-  const handleSave = (values: KitchenGroupFormValues) => {
-    setGroups((current) => upsertById(current, { id: dialog.editing?.id ?? crypto.randomUUID(), ...values }));
-    toast.success(dialog.editing ? "Mutfak grubu güncellendi" : "Mutfak grubu eklendi");
+  const handleSave = async (values: KitchenGroupFormValues) => {
+    if (dialog.editing) {
+      await updateKitchenGroup(dialog.editing.id, values);
+      toast.success("Mutfak grubu güncellendi");
+    } else {
+      await createKitchenGroup(values);
+      toast.success("Mutfak grubu eklendi");
+    }
     dialog.close();
   };
 
   const handleDelete = (group: KitchenGroup) => {
-    setGroups((current) => removeById(current, group.id));
-    toast.success("Mutfak grubu silindi");
+    deleteKitchenGroup(group.id)
+      .then(() => toast.success("Mutfak grubu silindi"))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Mutfak grubu silinemedi"));
   };
 
   const columns: readonly DataTableColumn<KitchenGroup>[] = [
@@ -92,7 +95,6 @@ export function KitchenGroupsScreen({ initialGroups = INITIAL_KITCHEN_GROUPS }: 
         key={dialog.session}
         open={dialog.isOpen}
         group={dialog.editing}
-        groups={groups}
         onOpenChange={dialog.onOpenChange}
         onSave={handleSave}
       />

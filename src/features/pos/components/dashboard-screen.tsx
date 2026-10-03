@@ -5,32 +5,30 @@ import { ArrowUpDown, BarChart3, Layers, LayoutGrid, Receipt, TrendingUp, Users,
 import { PageContainer } from "@/components/kit/page";
 import { Panel } from "@/components/kit/panel";
 import { StatCard } from "@/components/kit/stat-card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ROUTES } from "@/config/routes";
-import { useNow } from "../hooks/use-now";
 import { formatKurus } from "@/lib/money";
 import { openOrderTotal } from "../model/pos-state";
-import { openBillCount, summarizeDay, tableOccupancy } from "../model/stats";
+import type { DaySummary } from "../model/stats";
+import { openBillCount, tableOccupancy } from "../model/stats";
 import { usePosState } from "../store/pos-provider";
 import { HourlySalesChart } from "./hourly-sales-chart";
 import { OccupancyCard } from "./occupancy-card";
 import { PaymentBreakdown } from "./payment-breakdown";
 
-const STAT_SKELETON = <Skeleton data-testid="stat-skeleton" className="ml-auto h-8 w-24" />;
 /** Keeps a card the same height as its neighbours when it has no footer text of its own, as the original did. */
 const NO_FOOTER = <span className="invisible">-</span>;
 
 /**
- * Today at a glance, read straight from the POS state. Figures that depend on the day are held back until the
- * client clock is known, so server HTML and the first browser render always agree. "Toplam Gider", the whole
- * "Finansal Analiz & Kârlılık" section and the guest count are honest zeros/estimates: nothing in this app tracks
- * expenses centrally, product cost, or a real headcount, so those can't be computed for real (same as the original).
+ * Today at a glance. `day` is fetched server-side (api/'s /reports/day-summary) so it needs no client clock and
+ * has no hydration-mismatch risk; the live floor figures (open-order total, table occupancy) still read the POS
+ * snapshot directly. Expenses, fire and the cost of goods sold (portion cost price × units) come from the same
+ * summary, so Brüt/Net Kâr are real. "Toplam Stok Maliyeti" is the stock on hand × each card's unit cost and the
+ * guest count is an estimate (paid bills + open bills; no real headcount is recorded).
  */
-export function DashboardScreen() {
+export function DashboardScreen({ day }: { day: DaySummary }) {
   const state = usePosState();
-  const now = useNow();
-  const day = now ? summarizeDay(state, now) : null;
   const openBills = openBillCount(state);
+  const grossProfit = day.salesTotal - day.costOfGoods;
 
   return (
     <PageContainer className="max-w-7xl gap-8">
@@ -43,9 +41,9 @@ export function DashboardScreen() {
         <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             icon={Layers}
-            iconClassName="bg-gradient-to-tr from-orange-500 to-orange-400 text-white"
+            iconClassName="bg-orange-50 text-orange-600"
             label="Bugünkü toplam satış tutarı"
-            value={day ? formatKurus(day.salesTotal) : STAT_SKELETON}
+            value={formatKurus(day.salesTotal)}
             footer={
               <Link href={ROUTES.reports} className="hover:text-primary hover:underline">
                 Gün sonu raporu
@@ -54,23 +52,23 @@ export function DashboardScreen() {
           />
           <StatCard
             icon={Users}
-            iconClassName="bg-gradient-to-tr from-sky-500 to-sky-400 text-white"
+            iconClassName="bg-sky-50 text-sky-600"
             label="Bugün ağırlanan misafir sayısı"
-            value={day ? day.paidCount + openBills : STAT_SKELETON}
+            value={day.paidCount + openBills}
             footer={NO_FOOTER}
           />
           <StatCard
             icon={BarChart3}
-            iconClassName="bg-gradient-to-tr from-green-500 to-green-400 text-white"
+            iconClassName="bg-green-50 text-green-600"
             label="Bugün açık sipariş toplamı"
             value={formatKurus(openOrderTotal(state))}
             footer={NO_FOOTER}
           />
           <StatCard
             icon={ArrowUpDown}
-            iconClassName="bg-gradient-to-tr from-rose-500 to-rose-400 text-white"
+            iconClassName="bg-rose-50 text-rose-600"
             label="Bugünkü toplam gider tutarı"
-            value={formatKurus(0)}
+            value={formatKurus(day.expenseTotal)}
             footer={
               <Link href={ROUTES.restaurantExpenses} className="hover:text-primary hover:underline">
                 Masraflar
@@ -87,42 +85,42 @@ export function DashboardScreen() {
         <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             icon={LayoutGrid}
-            iconClassName="bg-gradient-to-tr from-purple-500 to-purple-400 text-white"
+            iconClassName="bg-purple-50 text-purple-600"
             label="Toplam Stok Maliyeti"
-            value={formatKurus(0)}
+            value={formatKurus(day.stockValue)}
             footer="Depodaki Ürün Maliyeti"
           />
           <StatCard
             icon={Receipt}
-            iconClassName="bg-gradient-to-tr from-indigo-500 to-indigo-400 text-white"
+            iconClassName="bg-indigo-50 text-indigo-600"
             label="Satılan Ürün Maliyeti"
-            value={formatKurus(0)}
+            value={formatKurus(day.costOfGoods)}
             footer="Gerçek Satış Maliyeti"
           />
           <StatCard
             icon={TrendingUp}
-            iconClassName="bg-gradient-to-tr from-teal-500 to-teal-400 text-white"
+            iconClassName="bg-teal-50 text-teal-600"
             label="Brüt Kâr"
-            value={formatKurus(0)}
+            value={formatKurus(grossProfit)}
             footer="Ciro - Satılan Ürün Maliyeti"
           />
           <StatCard
             icon={Wallet}
-            iconClassName="bg-gradient-to-tr from-cyan-500 to-cyan-400 text-white"
+            iconClassName="bg-cyan-50 text-cyan-600"
             label="Net Kâr"
-            value={formatKurus(0)}
-            footer="Brüt Kâr - Giderler"
+            value={formatKurus(grossProfit - day.expenseTotal - day.wastageTotal)}
+            footer="Brüt Kâr - Gider - Zayi"
           />
         </div>
       </section>
 
       <Panel title="Günlük Satış Miktarları" aside="Tutar (₺)">
-        {day ? <HourlySalesChart hours={day.byHour} peakHour={day.peakHour} /> : <Skeleton className="h-64 w-full" />}
+        <HourlySalesChart hours={day.byHour} peakHour={day.peakHour} />
       </Panel>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel title="Bugün Yapılan Ödemeler">
-          {day ? <PaymentBreakdown methods={day.byMethod} /> : <Skeleton className="h-40 w-full" />}
+          <PaymentBreakdown methods={day.byMethod} />
         </Panel>
         <Panel title="Masa Yoğunluğu (%)">
           <OccupancyCard occupancy={tableOccupancy(state)} />

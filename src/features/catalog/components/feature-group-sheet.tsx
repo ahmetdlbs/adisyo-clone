@@ -11,7 +11,7 @@ import { FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   SELECTION_TYPE_OPTIONS,
-  createFeatureGroupFormSchema,
+  featureGroupFormSchema,
   type FeatureGroup,
   type FeatureGroupFormInput,
   type FeatureGroupFormValues,
@@ -21,17 +21,17 @@ interface FeatureGroupSheetProps {
   open: boolean;
   /** The group being edited, or null when creating. */
   group: FeatureGroup | null;
-  groups: readonly FeatureGroup[];
   onOpenChange: (open: boolean) => void;
-  onSave: (values: FeatureGroupFormValues) => void;
+  /** Throw an Error to reject the group; its message is shown on the name field. */
+  onSave: (values: FeatureGroupFormValues) => Promise<void>;
 }
 
 const blankOption = () => ({ id: crypto.randomUUID(), name: "", price: "", isDefault: false });
 
 /** Mount with a new `key` per opening so the form starts from this group's values. */
-export function FeatureGroupSheet({ open, group, groups, onOpenChange, onSave }: FeatureGroupSheetProps) {
+export function FeatureGroupSheet({ open, group, onOpenChange, onSave }: FeatureGroupSheetProps) {
   const form = useForm<FeatureGroupFormInput, unknown, FeatureGroupFormValues>({
-    resolver: zodResolver(createFeatureGroupFormSchema(groups, group?.id ?? null)),
+    resolver: zodResolver(featureGroupFormSchema),
     defaultValues: {
       name: group?.name ?? "",
       selectionType: group?.selectionType ?? "single",
@@ -46,6 +46,14 @@ export function FeatureGroupSheet({ open, group, groups, onOpenChange, onSave }:
   const { errors } = form.formState;
   const optionsError = errors.options?.message ?? errors.options?.root?.message;
 
+  const submit = form.handleSubmit(async (values) => {
+    try {
+      await onSave(values);
+    } catch (error) {
+      form.setError("name", { message: error instanceof Error ? error.message : "Kaydedilemedi" });
+    }
+  });
+
   return (
     <FormSheet
       open={open}
@@ -53,7 +61,8 @@ export function FeatureGroupSheet({ open, group, groups, onOpenChange, onSave }:
       title="Özellik Grubu Tanımla"
       description={group ? "Grubu ve özelliklerini güncelleyiniz." : "Yeni özellik grubu ve özelliklerini giriniz."}
       submitLabel={group ? "Kaydet" : "Ekle"}
-      onSubmit={form.handleSubmit(onSave)}
+      isSubmitting={form.formState.isSubmitting}
+      onSubmit={submit}
     >
       <TextField control={form.control} name="name" label="Özellik grup ismi" required autoFocus />
       <SelectField control={form.control} name="selectionType" label="Seçim tipi" options={SELECTION_TYPE_OPTIONS} />

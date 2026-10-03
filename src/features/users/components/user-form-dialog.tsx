@@ -11,7 +11,7 @@ const ROLE_OPTIONS = USER_ROLES.map((role) => ({ value: role, label: role }));
 interface UserFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: UserFormValues) => void;
+  onSave: (values: UserFormValues) => Promise<void>;
 }
 
 /** Mount with a new `key` per opening so the form starts blank each time. */
@@ -21,9 +21,9 @@ export function UserFormDialog({ open, onOpenChange, onSave }: UserFormDialogPro
     defaultValues: { role: "Garson", name: "", email: "", phone: "", password: "", region: "", callerId: false, blockLogin: false, usePin: false },
   });
 
-  const submit = form.handleSubmit((values) => {
+  const submit = form.handleSubmit(async (values) => {
     try {
-      onSave(values);
+      await onSave(values);
     } catch (error) {
       form.setError("phone", { message: error instanceof Error ? error.message : "Kaydedilemedi" });
     }
@@ -36,6 +36,7 @@ export function UserFormDialog({ open, onOpenChange, onSave }: UserFormDialogPro
       title="Kullanıcı Ekle"
       description="Yeni eklemek istediğiniz kullanıcının bilgilerini giriniz"
       submitLabel="Ekle"
+      isSubmitting={form.formState.isSubmitting}
       onSubmit={submit}
     >
       <SelectField control={form.control} name="role" label="Görev Seçiniz" required options={ROLE_OPTIONS} />

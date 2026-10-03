@@ -23,6 +23,7 @@ export const ROUTES = {
   vatDefinitions: "/vat-definitions",
   discounts: "/discounts",
   kitchenGroups: "/kitchen-groups",
+  courseGroups: "/course-groups",
 
   restaurantCustomers: "/restaurant-customers",
   restaurantPaidlesses: "/restaurant-paidlesses",
@@ -44,7 +45,6 @@ export const ROUTES = {
 
   printerSettings: "/printer-settings",
   appStore: "/app-store",
-  referral: "/referral",
 
   profile: "/profile",
   restaurantSettings: "/restaurant-settings",

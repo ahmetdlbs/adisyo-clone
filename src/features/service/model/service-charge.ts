@@ -55,11 +55,6 @@ export function createServiceChargeFormSchema(kind: ServiceChargeKind) {
 }
 export type ServiceChargeFormValues = z.infer<ReturnType<typeof createServiceChargeFormSchema>>;
 
-/** Sets the kuver or garsoniye definition. */
-export function saveServiceCharge(state: ServiceSettings, which: "kuver" | "garsoniye", charge: ServiceCharge): ServiceSettings {
-  return { ...state, [which]: charge };
-}
-
 /** kuruş for an "amount" charge, or that percent of `subtotal` (rounded) for a "percent" one. */
 export function serviceChargeAmount(charge: ServiceCharge, subtotal: Kurus): Kurus {
   return charge.kind === "amount" ? charge.amount : Math.round((subtotal * charge.amount) / 100);

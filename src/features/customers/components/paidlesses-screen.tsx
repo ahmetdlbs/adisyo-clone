@@ -12,31 +12,36 @@ import { TablePagination } from "@/components/kit/table-pagination";
 import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { usePagination } from "@/hooks/use-pagination";
-import { removeById } from "@/lib/collection";
 import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
-import { formatPaidlessNo, paidlessSearchText, savePaidless, type Paidless, type PaidlessFormValues } from "../model/paidless";
+import { formatPaidlessNo, paidlessSearchText, type Paidless, type PaidlessFormValues } from "../model/paidless";
+import { createPaidless, deletePaidless, updatePaidless } from "../server/paidless-actions";
 import { PaidlessFormDialog } from "./paidless-form-dialog";
 
 const nameOf = (item: Paidless) => `${item.firstName} ${item.lastName}`.trim();
 
-export function PaidlessesScreen({ initialItems = [] }: { initialItems?: readonly Paidless[] }) {
-  const [items, setItems] = useState(initialItems);
+export function PaidlessesScreen({ items }: { items: readonly Paidless[] }) {
   const [query, setQuery] = useState("");
   const dialog = useEntityDialog<Paidless>();
 
   const pager = usePagination(filterByQuery(items, query, paidlessSearchText));
 
-  const handleSave = (values: PaidlessFormValues) => {
-    // savePaidless throws when the person is already listed; the form shows the message and stays open.
-    setItems(savePaidless(items, { id: dialog.editing?.id ?? null, ...values }, () => crypto.randomUUID()));
-    toast.success(dialog.editing ? "Ödenmez güncellendi" : "Ödenmez eklendi");
+  const handleSave = async (values: PaidlessFormValues) => {
+    // createPaidless/updatePaidless throw when the person is already listed; the form shows the message and stays open.
+    if (dialog.editing) {
+      await updatePaidless(dialog.editing.id, values);
+      toast.success("Ödenmez güncellendi");
+    } else {
+      await createPaidless(values);
+      toast.success("Ödenmez eklendi");
+    }
     dialog.close();
   };
 
   const handleDelete = (item: Paidless) => {
-    setItems((current) => removeById(current, item.id));
-    toast.success("Ödenmez silindi");
+    deletePaidless(item.id)
+      .then(() => toast.success("Ödenmez silindi"))
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Ödenmez silinemedi"));
   };
 
   const columns: readonly DataTableColumn<Paidless>[] = [

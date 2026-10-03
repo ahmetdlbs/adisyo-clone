@@ -8,12 +8,18 @@ import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
-beforeEach(() => toast.success.mockClear());
+const actions = vi.hoisted(() => ({ createExpense: vi.fn() }));
+vi.mock("@/features/expenses/server/actions", () => actions);
+
+beforeEach(() => {
+  Object.values(toast).forEach((mock) => mock.mockClear());
+  actions.createExpense.mockReset();
+});
 
 const KITCHEN: Expense = { id: "e1", type: "Mutfak Gideri", paymentMethod: "cash", amount: 15000, occurredAt: "2026-09-20T10:00:00.000Z", note: "Sebze alımı" };
 
 function setup(expenses: Expense[] = []) {
-  render(<ExpensesScreen initialExpenses={expenses} />);
+  render(<ExpensesScreen expenses={expenses} />);
   return userEvent.setup();
 }
 
@@ -31,7 +37,8 @@ describe("ExpensesScreen", () => {
     expect(screen.getByText(/Herhangi bir sonuç bulunamadı/)).toBeInTheDocument();
   });
 
-  it("adds an expense", async () => {
+  it("calls createExpense with the entered values and shows a success toast", async () => {
+    actions.createExpense.mockResolvedValue(KITCHEN);
     const user = setup();
 
     await user.click(screen.getByRole("button", { name: "Masraf Ekle" }));
@@ -40,17 +47,30 @@ describe("ExpensesScreen", () => {
     await user.type(dialog.getByRole("textbox", { name: /Açıklama/ }), "Tamir");
     await user.click(dialog.getByRole("button", { name: "Kaydet" }));
 
-    await waitFor(() => expect(screen.getByRole("row", { name: /Tamir/ })).toBeInTheDocument());
-    expect(toast.success).toHaveBeenCalledWith("Masraf eklendi");
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Masraf eklendi"));
+    expect(actions.createExpense).toHaveBeenCalledWith(expect.objectContaining({ amount: 7550, note: "Tamir" }));
   });
 
-  it("says the amount is missing", async () => {
+  it("says the amount is missing, never calling createExpense", async () => {
     const user = setup();
 
     await user.click(screen.getByRole("button", { name: "Masraf Ekle" }));
     await user.click(within(await screen.findByRole("dialog", { name: "Ekle" })).getByRole("button", { name: "Kaydet" }));
 
     expect(await screen.findByText("Geçerli bir tutar giriniz")).toBeInTheDocument();
+    expect(actions.createExpense).not.toHaveBeenCalled();
+  });
+
+  it("shows an error toast when the save fails", async () => {
+    actions.createExpense.mockRejectedValue(new Error("Masraf eklenemedi"));
+    const user = setup();
+
+    await user.click(screen.getByRole("button", { name: "Masraf Ekle" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Ekle" }));
+    await user.type(dialog.getByRole("textbox", { name: /Tutar/ }), "10");
+    await user.click(dialog.getByRole("button", { name: "Kaydet" }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Masraf eklenemedi"));
   });
 
   it("searches by type or note", async () => {

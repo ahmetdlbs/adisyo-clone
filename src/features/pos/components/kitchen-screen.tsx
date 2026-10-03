@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { ArrowLeft, ChefHat, Settings, Sparkles, User } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
 import { ROUTES } from "@/config/routes";
 import { notifyUnavailable } from "@/lib/notify";
 import { useNow } from "../hooks/use-now";
-import { elapsedLabel, isLate, lineTotal, markReady, type Order } from "../model/order";
+import { elapsedLabel, isLate, lineTotal, type Order } from "../model/order";
 import { orderTitle } from "../model/pos-state";
 import { usePosActions, usePosState } from "../store/pos-provider";
 
@@ -51,7 +52,17 @@ export function KitchenScreen() {
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {preparing.map((order) => (
-            <KitchenTicket key={order.id} order={order} title={orderTitle(state, order)} now={now} onReady={() => actions.updateOrder(order.id, markReady)} />
+            <KitchenTicket
+              key={order.id}
+              order={order}
+              title={orderTitle(state, order)}
+              now={now}
+              onReady={() => {
+                actions.markReady(order.id).catch((error: unknown) => {
+                  toast.error(error instanceof Error ? error.message : "İşlem yapılamadı");
+                });
+              }}
+            />
           ))}
         </div>
       )}

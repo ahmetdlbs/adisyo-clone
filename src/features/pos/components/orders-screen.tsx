@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEMO_IDENTITY } from "@/config/demo-identity";
 import { formatKurus } from "@/lib/money";
-import { applyPayment, remaining, setDiscountPercent } from "../model/order";
+import { remaining } from "../model/order";
 import { orderForTable, orderTitle } from "../model/pos-state";
 import { usePosActions, usePosState } from "../store/pos-provider";
 import { DiscountDialog } from "./discount-dialog";
@@ -40,26 +40,26 @@ export function OrdersScreen() {
   const cancelOrder = state.orders.find((order) => order.id === cancelOrderId);
   const discountOrder = state.orders.find((order) => order.id === discountOrderId);
 
-  const guard = (action: () => void) => {
+  const guard = async (action: () => Promise<void>) => {
     try {
-      action();
+      await action();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "İşlem yapılamadı");
     }
   };
 
   const selectTable = (tableId: string) =>
-    guard(() => {
+    guard(async () => {
       const existing = orderForTable(state, tableId);
-      setActiveOrderId(existing ? existing.id : actions.openOrder({ type: "table", tableId, waiter }));
+      setActiveOrderId(existing ? existing.id : await actions.openOrder({ type: "table", tableId, waiter }));
     });
 
   const startOrder = (type: "takeaway" | "delivery") =>
-    guard(() => setActiveOrderId(actions.openOrder({ type, tableId: null, customerName: waiter, waiter })));
+    guard(async () => setActiveOrderId(await actions.openOrder({ type, tableId: null, customerName: waiter, waiter })));
 
   // An order nobody added anything to is dropped on the way out, so it never lingers as a phantom.
   const leaveDetail = () => {
-    if (activeOrder) actions.discardEmptyOrder(activeOrder.id);
+    if (activeOrder) void actions.discardEmptyOrder(activeOrder.id);
     setActiveOrderId(null);
   };
 
@@ -68,31 +68,29 @@ export function OrdersScreen() {
   };
 
   const fastPay = (orderId: string) =>
-    guard(() => {
+    guard(async () => {
       const order = state.orders.find((candidate) => candidate.id === orderId);
       if (!order) return;
       const due = remaining(order);
       if (due > 0) {
-        actions.updateOrder(orderId, (current) =>
-          applyPayment(current, { method: "cash", tendered: due }, { paymentId: crypto.randomUUID(), now: new Date() }).order
-        );
+        await actions.applyPayment(orderId, { method: "cash", tendered: due });
       }
-      actions.closeOrder(orderId);
+      await actions.closeOrder(orderId);
       toast.success("Hızlı ödeme alındı");
       finished(orderId);
     });
 
   const cancel = (orderId: string) =>
-    guard(() => {
-      actions.cancelOrder(orderId);
+    guard(async () => {
+      await actions.cancelOrder(orderId);
       toast.success("Sipariş iptal edildi");
       finished(orderId);
     });
 
   const applyDiscount = (percent: number) =>
-    guard(() => {
+    guard(async () => {
       if (!discountOrder) return;
-      actions.updateOrder(discountOrder.id, (current) => setDiscountPercent(current, percent));
+      await actions.setDiscount(discountOrder.id, percent);
       toast.success(percent > 0 ? `%${percent} indirim uygulandı` : "İndirim kaldırıldı");
       setDiscountOrderId(null);
     });

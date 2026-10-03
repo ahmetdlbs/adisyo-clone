@@ -7,15 +7,7 @@ import { ConfirmDialog } from "@/components/kit/confirm-dialog";
 import { SearchInput } from "@/components/kit/search-input";
 import { Button } from "@/components/ui/button";
 import { notifyUnavailable } from "@/lib/notify";
-import {
-  addProduct,
-  decrementProduct,
-  removeLine,
-  resetOrder,
-  toggleComplimentary,
-  type Order,
-  type OrderStage,
-} from "../model/order";
+import type { OrderStage } from "../model/order";
 import { orderTitle, type Product } from "../model/pos-state";
 import { usePosActions, usePosState } from "../store/pos-provider";
 import { MenuPanel } from "./menu-panel";
@@ -45,17 +37,16 @@ export function OrderDetail({ orderId, onBack, onPay, onFastPay, onDiscount }: O
   const order = state.orders.find((candidate) => candidate.id === orderId);
   if (!order) return null;
 
-  // Every edit goes through the model, which refuses the ones that would corrupt a bill (e.g. changing a paid line).
-  const change = (updater: (current: Order) => Order) => {
+  // The API refuses edits that would corrupt a bill (e.g. changing an already-paid line).
+  const run = async (action: () => Promise<unknown>) => {
     try {
-      actions.updateOrder(order.id, updater);
+      await action();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "İşlem yapılamadı");
     }
   };
 
-  const add = (product: Product) =>
-    change((current) => addProduct(current, { id: product.id, name: product.name, price: product.price }, crypto.randomUUID()));
+  const add = (product: Product, portionId: string) => run(() => actions.addProduct(order.id, product.id, portionId));
 
   const save = () => {
     toast.success("Sipariş kaydedildi");
@@ -97,9 +88,14 @@ export function OrderDetail({ orderId, onBack, onPay, onFastPay, onDiscount }: O
       <div className="flex min-h-0 flex-1">
         <TicketPanel
           order={order}
-          onToggleComplimentary={(lineId) => change((current) => toggleComplimentary(current, lineId))}
-          onRemoveLine={(lineId) => change((current) => removeLine(current, lineId))}
+          onToggleComplimentary={(lineId) => run(() => actions.toggleComplimentary(order.id, lineId))}
+          onRemoveLine={(lineId) => run(() => actions.removeLine(order.id, lineId))}
           onDiscount={() => onDiscount(order.id)}
+          onToggleCharge={(which, isOn) => {
+            const current = order.charges ?? [];
+            const has = (name: "kuver" | "garsoniye") => current.some((charge) => charge.which === name);
+            return run(() => actions.setCharges(order.id, { kuver: which === "kuver" ? isOn : has("kuver"), garsoniye: which === "garsoniye" ? isOn : has("garsoniye") }));
+          }}
           onPay={() => onPay(order.id)}
           onFastPay={() => onFastPay(order.id)}
           onSave={save}
@@ -110,7 +106,7 @@ export function OrderDetail({ orderId, onBack, onPay, onFastPay, onDiscount }: O
           order={order}
           query={query}
           onAdd={add}
-          onDecrement={(product) => change((current) => decrementProduct(current, product.id))}
+          onDecrement={(product, portionId) => run(() => actions.decrementProduct(order.id, product.id, portionId))}
         />
       </div>
 
@@ -121,7 +117,7 @@ export function OrderDetail({ orderId, onBack, onPay, onFastPay, onDiscount }: O
         description="Ödenmemiş tüm kalemler adisyondan silinir. Ödenmiş kalemler ve tahsilatlar kalır."
         confirmLabel="Sıfırla"
         destructive
-        onConfirm={() => change(resetOrder)}
+        onConfirm={() => run(() => actions.resetOrder(order.id))}
       />
     </div>
   );
