@@ -101,4 +101,5 @@ export const toOrder = (order: ApiOrder): Order => ({
   discountPercent: order.discountPercent,
   payments: order.payments.map(toPayment),
   charges: order.charges ?? [],
+  guestCount: order.guestCount ?? 1,
 });

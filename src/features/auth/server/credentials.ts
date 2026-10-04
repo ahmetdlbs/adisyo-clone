@@ -1,11 +1,26 @@
 import "server-only";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import type { LoginValues } from "../model/login";
+import type { RegisterFormValues } from "../model/register";
 
 /** What api/'s `POST /auth/login` returns on success — see api/src/auth/auth.service.ts LoginResult. */
 export interface LoginResult {
   token: string;
   user: { id: string; tenantId: string; role: string; name: string; email: string };
+}
+
+/** Creates a restaurant and its owner through api/'s `POST /auth/register`; the result signs the owner in. */
+export async function registerRestaurant(values: RegisterFormValues): Promise<LoginResult> {
+  return apiFetch<LoginResult>("/auth/register", {
+    method: "POST",
+    body: {
+      restaurantName: values.restaurantName,
+      fullName: values.fullName,
+      email: values.email,
+      phone: `${values.countryCode}${values.phone}`,
+      password: values.password,
+    },
+  });
 }
 
 /**

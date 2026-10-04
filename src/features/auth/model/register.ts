@@ -49,5 +49,7 @@ export const registerSchema = z
     message: "Şifreler eşleşmiyor",
   });
 
+export type RegisterState = { ok: true } | { ok: false; message: string; field?: "email" };
+
 export type RegisterFormInput = z.input<typeof registerSchema>;
 export type RegisterFormValues = z.output<typeof registerSchema>;

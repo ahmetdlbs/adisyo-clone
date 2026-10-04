@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adjustStockFormSchema, isLowStock, stockItemFormSchema, stockValue } from "@/features/stock/model/stock-item";
+import { adjustStockFormSchema, buildStockCount, isLowStock, stockItemFormSchema, stockValue, type StockItem } from "@/features/stock/model/stock-item";
 
 function messages(schema: { safeParse: (value: unknown) => { success: boolean; error?: { issues: { message: string }[] } } }, value: unknown) {
   const result = schema.safeParse(value);
@@ -93,5 +93,33 @@ describe("stockValue", () => {
   it("counts a card with no price, or in shortage, as nothing", () => {
     expect(stockValue({ quantity: 5, unitCost: undefined })).toBe(0);
     expect(stockValue({ quantity: -3, unitCost: 4000 })).toBe(0);
+  });
+});
+
+describe("buildStockCount", () => {
+  const items: StockItem[] = [
+    { id: "a", name: "Dana", unitId: "u", unitName: "Kg", quantity: 5 },
+    { id: "b", name: "Tavuk", unitId: "u", unitName: "Kg", quantity: 2 },
+  ];
+
+  it("keeps only the quantities that differ from the system's", () => {
+    expect(buildStockCount(items, { a: "5", b: "1,5" })).toEqual({ ok: true, lines: [{ stockItemId: "b", quantity: 1.5 }] });
+  });
+
+  it("treats a counted zero as a real count", () => {
+    expect(buildStockCount(items, { a: "0" })).toEqual({ ok: true, lines: [{ stockItemId: "a", quantity: 0 }] });
+  });
+
+  it("skips blank cells", () => {
+    expect(buildStockCount(items, { a: "  ", b: "3" })).toEqual({ ok: true, lines: [{ stockItemId: "b", quantity: 3 }] });
+  });
+
+  it("rejects the whole sheet on one bad or negative number, naming the card", () => {
+    expect(buildStockCount(items, { a: "7", b: "abc" })).toEqual({ ok: false, message: '"Tavuk" için geçerli bir miktar giriniz' });
+    expect(buildStockCount(items, { a: "-1" })).toEqual({ ok: false, message: '"Dana" için geçerli bir miktar giriniz' });
+  });
+
+  it("says so when nothing changed", () => {
+    expect(buildStockCount(items, { a: "5" })).toEqual({ ok: false, message: "Sayım sonucunda değişen bir miktar yok" });
   });
 });

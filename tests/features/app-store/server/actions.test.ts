@@ -11,7 +11,7 @@ vi.mock("@/lib/api-client", async (importOriginal) => {
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
 describe("purchaseApp", () => {
-  it("checks out the app monthly and revalidates the store page on success", async () => {
+  it("checks out the app monthly and refreshes the whole signed-in layout on success", async () => {
     mocks.apiFetch.mockReset().mockResolvedValue({ paymentId: "p1", entitlements: [] });
     mocks.revalidatePath.mockClear();
 
@@ -21,8 +21,8 @@ describe("purchaseApp", () => {
       method: "POST",
       body: { appIds: ["app-1"], period: "MONTHLY" },
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/app-store");
-    expect(result).toEqual({ ok: true, message: "Uygulama mağazanıza eklendi" });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/", "layout");
+    expect(result).toEqual({ ok: true, message: "Uygulama eklendi, menünüzde görünüyor" });
   });
 
   it("returns the API's own message on failure, without revalidating", async () => {

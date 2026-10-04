@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loginAction, logoutAction } from "@/features/auth/server/actions";
+import { ApiError } from "@/lib/api-client";
+import { loginAction, logoutAction, registerAction } from "@/features/auth/server/actions";
 
 const mocks = vi.hoisted(() => ({
   createSession: vi.fn(),
   deleteSession: vi.fn(),
   verifyCredentials: vi.fn(),
+  registerRestaurant: vi.fn(),
   // Next's redirect() throws to unwind the action; the mock does the same so code after it cannot run.
   redirect: vi.fn((to: string) => {
     throw new Error(`NEXT_REDIRECT:${to}`);
@@ -13,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/auth/server/session", () => ({ createSession: mocks.createSession, deleteSession: mocks.deleteSession }));
-vi.mock("@/features/auth/server/credentials", () => ({ verifyCredentials: mocks.verifyCredentials }));
+vi.mock("@/features/auth/server/credentials", () => ({ verifyCredentials: mocks.verifyCredentials, registerRestaurant: mocks.registerRestaurant }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
 const LOGIN_RESULT = {
@@ -25,6 +27,7 @@ beforeEach(() => {
   mocks.createSession.mockClear();
   mocks.deleteSession.mockClear();
   mocks.verifyCredentials.mockReset();
+  mocks.registerRestaurant.mockReset();
   mocks.redirect.mockClear();
 });
 
@@ -120,5 +123,48 @@ describe("logoutAction", () => {
     await expect(logoutAction()).rejects.toThrow("NEXT_REDIRECT:/login");
 
     expect(mocks.deleteSession).toHaveBeenCalledOnce();
+  });
+});
+
+describe("registerAction", () => {
+  const VALID = {
+    restaurantName: "Lezzet Durağı",
+    fullName: "Ahmet Yılmaz",
+    email: "ahmet@lezzet.test",
+    countryCode: "+90" as const,
+    phone: "532 111 22 33",
+    password: "Sifre1234",
+    passwordConfirm: "Sifre1234",
+    acceptedTerms: true,
+  };
+
+  it("creates the restaurant and signs the owner in", async () => {
+    mocks.registerRestaurant.mockResolvedValue(LOGIN_RESULT);
+
+    expect(await registerAction(VALID)).toEqual({ ok: true });
+    expect(mocks.createSession).toHaveBeenCalledWith("signed.jwt.token");
+  });
+
+  it("re-checks the form's rules on the server and never reaches api/ with a bad sign-up", async () => {
+    const result = await registerAction({ ...VALID, passwordConfirm: "Baska1234" });
+
+    expect(result).toEqual({ ok: false, message: "Şifreler eşleşmiyor" });
+    expect(mocks.registerRestaurant).not.toHaveBeenCalled();
+    expect(mocks.createSession).not.toHaveBeenCalled();
+  });
+
+  it("puts a taken e-mail on the e-mail field", async () => {
+    mocks.registerRestaurant.mockRejectedValue(new ApiError("Bu e-posta ile kayıtlı bir hesap var", 409));
+
+    expect(await registerAction(VALID)).toMatchObject({ ok: false, field: "email" });
+    expect(mocks.createSession).not.toHaveBeenCalled();
+  });
+
+  it("explains a rate limit and an outage differently", async () => {
+    mocks.registerRestaurant.mockRejectedValueOnce(new ApiError("x", 429));
+    expect(await registerAction(VALID)).toMatchObject({ ok: false, message: expect.stringContaining("Çok fazla deneme") });
+
+    mocks.registerRestaurant.mockRejectedValueOnce(new Error("down"));
+    expect(await registerAction(VALID)).toMatchObject({ ok: false, message: expect.stringContaining("Kayıt tamamlanamadı") });
   });
 });

@@ -4,9 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { RegisterForm } from "@/features/auth/components/register-form";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
+const actions = vi.hoisted(() => ({ registerAction: vi.fn() }));
+vi.mock("@/features/auth/server/actions", () => actions);
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
-beforeEach(() => router.push.mockClear());
+beforeEach(() => {
+  router.push.mockClear();
+  actions.registerAction.mockReset().mockResolvedValue({ ok: true });
+});
 
 function setup() {
   render(<RegisterForm />);
@@ -59,13 +64,35 @@ describe("RegisterForm", () => {
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it("continues to onboarding once everything is valid", async () => {
+  it("creates the account and opens the dashboard once everything is valid", async () => {
     const { user } = setup();
     await fillValidForm(user);
 
     await submit(user);
 
-    await waitFor(() => expect(router.push).toHaveBeenCalledExactlyOnceWith("/onboarding"));
+    await waitFor(() => expect(router.push).toHaveBeenCalledExactlyOnceWith("/dashboard"));
+    expect(actions.registerAction).toHaveBeenCalledWith(expect.objectContaining({ email: "ahmet@lezzet.test", phone: "5321112233" }));
+  });
+
+  it("shows a taken e-mail on the e-mail field and stays on the page", async () => {
+    actions.registerAction.mockResolvedValue({ ok: false, message: "Bu e-posta ile kayıtlı bir hesap var.", field: "email" });
+    const { user } = setup();
+    await fillValidForm(user);
+
+    await submit(user);
+
+    expect(await screen.findByText("Bu e-posta ile kayıtlı bir hesap var.")).toBeInTheDocument();
+    expect(router.push).not.toHaveBeenCalled();
+  });
+
+  it("shows a general failure above the button", async () => {
+    actions.registerAction.mockResolvedValue({ ok: false, message: "Kayıt tamamlanamadı." });
+    const { user } = setup();
+    await fillValidForm(user);
+
+    await submit(user);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Kayıt tamamlanamadı.");
   });
 
   it("can reveal the typed password", async () => {

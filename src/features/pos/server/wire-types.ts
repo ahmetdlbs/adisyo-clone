@@ -107,6 +107,7 @@ export interface ApiOrder {
   lines: ApiOrderLine[];
   payments: ApiOrderPayment[];
   charges?: ApiOrderCharge[];
+  guestCount?: number;
 }
 
 export interface ApiOrderCharge {

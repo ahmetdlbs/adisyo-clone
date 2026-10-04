@@ -91,6 +91,7 @@ export function OrderDetail({ orderId, onBack, onPay, onFastPay, onDiscount }: O
           onToggleComplimentary={(lineId) => run(() => actions.toggleComplimentary(order.id, lineId))}
           onRemoveLine={(lineId) => run(() => actions.removeLine(order.id, lineId))}
           onDiscount={() => onDiscount(order.id)}
+          onGuestsChange={(count) => run(() => actions.setGuests(order.id, count))}
           onToggleCharge={(which, isOn) => {
             const current = order.charges ?? [];
             const has = (name: "kuver" | "garsoniye") => current.some((charge) => charge.which === name);

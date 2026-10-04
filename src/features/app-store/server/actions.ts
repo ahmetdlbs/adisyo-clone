@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { ROUTES } from "@/config/routes";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
 const GENERIC_FAILURE_MESSAGE = "Satın alma işlemi tamamlanamadı";
@@ -25,6 +24,7 @@ export async function purchaseApp(appId: string): Promise<PurchaseAppResult> {
     return { ok: false, message };
   }
 
-  revalidatePath(ROUTES.appStore);
-  return { ok: true, message: "Uygulama mağazanıza eklendi" };
+  // The menu and every gated screen depend on what is bought, so the whole signed-in layout is refreshed.
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Uygulama eklendi, menünüzde görünüyor" };
 }

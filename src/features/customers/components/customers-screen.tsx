@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { formatKurus } from "@/lib/money";
+import { downloadCsv, kurusCell } from "@/lib/csv";
 import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
 import { customerSearchText, totalBalance, type Customer, type CustomerFormValues } from "../model/customer";
@@ -26,6 +27,13 @@ export function CustomersScreen({ customers }: { customers: readonly Customer[] 
 
   const matching = filterByQuery(customers, query, customerSearchText);
   const pager = usePagination(matching);
+
+  const handleExport = () =>
+    downloadCsv(
+      "musteriler.csv",
+      ["No", "Ad", "Soyad", "Telefon", "Telefon 2", "Bakiye"],
+      matching.map((customer) => [customer.no, customer.firstName, customer.lastName, customer.phone, customer.phone2, kurusCell(customer.balance)]),
+    );
 
   const handleSave = async (values: CustomerFormValues) => {
     // createCustomer/updateCustomer throw when the phone number is taken; the form shows the message and stays open.
@@ -94,7 +102,7 @@ export function CustomersScreen({ customers }: { customers: readonly Customer[] 
                 <Upload />
                 Müşterileri Yükle
               </Button>
-              <Button variant="ghost" className="text-primary" onClick={notifyUnavailable}>
+              <Button variant="ghost" className="text-primary" onClick={handleExport}>
                 <Download />
                 İndir
               </Button>

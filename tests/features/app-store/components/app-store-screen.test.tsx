@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppStoreScreen } from "@/features/app-store/components/app-store-screen";
 import type { AppEntitlement, CatalogApp } from "@/features/app-store/model/app-store";
-import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
@@ -19,27 +18,31 @@ function app(overrides: Partial<CatalogApp> = {}): CatalogApp {
     description: "d",
     category: "delivery",
     isCore: false,
+    isAvailable: true,
     monthlyPrice: 22500,
     yearlyPrice: 225000,
     ...overrides,
   };
 }
 
-const APPS: readonly CatalogApp[] = [
+const APPS: CatalogApp[] = [
   app({ id: "app-1", category: "delivery", name: "Yemek Sepeti Entegrasyonu" }),
   app({ id: "app-2", category: "hardware", name: "Android Caller ID", monthlyPrice: 7900, yearlyPrice: 79000 }),
-  app({ id: "app-3", category: "operations", name: "Sipariş & Masa Yönetimi", isCore: true, monthlyPrice: 0, yearlyPrice: 0 }),
+  app({ id: "app-3", key: "siparis-masa-yonetimi", category: "operations", name: "Sipariş & Masa Yönetimi", isCore: true, monthlyPrice: 0, yearlyPrice: 0 }),
+  app({ id: "app-4", key: "e-fatura", category: "einvoice", name: "E-Fatura Entegrasyonu", isAvailable: false }),
 ];
-const ENTITLEMENTS: readonly AppEntitlement[] = [{ appId: "app-2", status: "ACTIVE" }];
+APPS[1] = { ...APPS[1]!, key: "android-caller-id" };
+const ACTIVE = ["android-caller-id", "siparis-masa-yonetimi"];
+const ENTITLEMENTS: readonly AppEntitlement[] = [{ appId: "app-2", status: "ACTIVE", expiresAt: "2026-11-03T00:00:00.000Z" }];
 
-function setup(props: { apps?: readonly CatalogApp[]; entitlements?: readonly AppEntitlement[] } = {}) {
+function setup(props: { apps?: readonly CatalogApp[]; activeKeys?: readonly string[]; entitlements?: readonly AppEntitlement[]; needKey?: string } = {}) {
   toast.success.mockClear();
   toast.error.mockClear();
   toast.info.mockClear();
   mocks.purchaseApp.mockReset();
 
   const user = userEvent.setup();
-  render(<AppStoreScreen apps={props.apps ?? APPS} entitlements={props.entitlements ?? ENTITLEMENTS} />);
+  render(<AppStoreScreen apps={props.apps ?? APPS} activeKeys={props.activeKeys ?? ACTIVE} entitlements={props.entitlements ?? ENTITLEMENTS} needKey={props.needKey} />);
   return { user };
 }
 
@@ -91,17 +94,17 @@ describe("AppStoreScreen", () => {
   it("shows the monthly price for a purchasable app but not for a core (free) one", () => {
     setup();
 
-    expect(screen.getByText("₺225,00 / ay")).toBeInTheDocument();
+    expect(screen.getAllByText("₺225,00 / ay").length).toBeGreaterThan(0);
     expect(screen.queryByText("₺0,00 / ay")).not.toBeInTheDocument();
   });
 
   it("buys a not-yet-owned app and shows a success toast", async () => {
     const { user } = setup();
-    mocks.purchaseApp.mockResolvedValue({ ok: true, message: "Uygulama mağazanıza eklendi" });
+    mocks.purchaseApp.mockResolvedValue({ ok: true, message: "Uygulama eklendi, menünüzde görünüyor" });
 
-    await user.click(screen.getByRole("button", { name: /Ekle/ }));
+    await user.click(screen.getAllByRole("button", { name: /Ekle/ })[0]!);
 
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Uygulama mağazanıza eklendi"));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Uygulama eklendi, menünüzde görünüyor"));
     expect(mocks.purchaseApp).toHaveBeenCalledWith("app-1");
   });
 
@@ -109,16 +112,42 @@ describe("AppStoreScreen", () => {
     const { user } = setup();
     mocks.purchaseApp.mockResolvedValue({ ok: false, message: "Bu uygulama zaten satın alınmış" });
 
-    await user.click(screen.getByRole("button", { name: /Ekle/ }));
+    await user.click(screen.getAllByRole("button", { name: /Ekle/ })[0]!);
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Bu uygulama zaten satın alınmış"));
   });
 
-  it("says managing an already-installed app is not available in this demo", async () => {
-    const { user } = setup();
+  it("opens an installed app's own screen, and says Kurulum for an integration", () => {
+    setup({ activeKeys: ["yemeksepeti-entegrasyonu", "siparis-masa-yonetimi"] });
 
-    await user.click(screen.getAllByRole("button", { name: "Yönet" })[0]!);
+    expect(screen.getByRole("link", { name: /Kurulum/ })).toHaveAttribute("href", "/integration-settings");
+    expect(screen.getByRole("link", { name: /Aç/ })).toHaveAttribute("href", "/orders");
+  });
 
-    expect(toast.info).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE);
+  it("marks installed apps and shows when a purchase renews", () => {
+    setup();
+
+    expect(screen.getAllByText("Kurulu")).toHaveLength(2);
+    expect(screen.getByText(/Yenileme: /)).toBeInTheDocument();
+  });
+
+  it("lists an app that is not built as Yakında with a disabled button", () => {
+    setup();
+
+    expect(screen.getByText("Yakında")).toBeInTheDocument();
+    const card = screen.getByText("E-Fatura Entegrasyonu").closest("div.rounded-xl") as HTMLElement;
+    expect(within(card).getByRole("button", { name: /Ekle/ })).toBeDisabled();
+  });
+
+  it("explains which app a gated screen needed when sent here", () => {
+    setup({ needKey: "yemeksepeti-entegrasyonu" });
+
+    expect(screen.getByText(/Yemek Sepeti Entegrasyonu" gerekiyor/)).toBeInTheDocument();
+  });
+
+  it("shows no notice when the needed app is already installed", () => {
+    setup({ needKey: "android-caller-id" });
+
+    expect(screen.queryByText(/gerekiyor/)).not.toBeInTheDocument();
   });
 });

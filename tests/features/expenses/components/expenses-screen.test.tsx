@@ -8,12 +8,15 @@ import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+const csv = vi.hoisted(() => ({ downloadCsv: vi.fn() }));
+vi.mock("@/lib/csv", async (importActual) => ({ ...(await importActual<typeof import("@/lib/csv")>()), ...csv }));
 const actions = vi.hoisted(() => ({ createExpense: vi.fn() }));
 vi.mock("@/features/expenses/server/actions", () => actions);
 
 beforeEach(() => {
   Object.values(toast).forEach((mock) => mock.mockClear());
   actions.createExpense.mockReset();
+  csv.downloadCsv.mockReset();
 });
 
 const KITCHEN: Expense = { id: "e1", type: "Mutfak Gideri", paymentMethod: "cash", amount: 15000, occurredAt: "2026-09-20T10:00:00.000Z", note: "Sebze alımı" };
@@ -82,13 +85,21 @@ describe("ExpensesScreen", () => {
     expect(screen.queryByRole("row", { name: /Mutfak/ })).not.toBeInTheDocument();
   });
 
-  it("tells the user expense types and export are not available yet", async () => {
+  it("tells the user that editing expense types is not available yet", async () => {
     const user = setup();
 
     await user.click(screen.getByRole("button", { name: "Masraf Tiplerini Düzenle" }));
+
+    expect(toast.info).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE);
+  });
+
+  it("downloads the listed expenses as a CSV file", async () => {
+    const user = setup([KITCHEN]);
+
     await user.click(screen.getByRole("button", { name: "İndir" }));
 
-    expect(toast.info).toHaveBeenCalledTimes(2);
-    expect(toast.info).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE);
+    expect(csv.downloadCsv).toHaveBeenCalledWith("masraflar.csv", expect.arrayContaining(["Masraf Tipi", "Tutar"]), [
+      ["Mutfak Gideri", KITCHEN.occurredAt, "Nakit", "150,00", "Sebze alımı"],
+    ]);
   });
 });

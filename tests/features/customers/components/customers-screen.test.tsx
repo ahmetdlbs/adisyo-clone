@@ -8,12 +8,15 @@ import { UNAVAILABLE_MESSAGE } from "@/lib/notify";
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 
+const csv = vi.hoisted(() => ({ downloadCsv: vi.fn() }));
+vi.mock("@/lib/csv", async (importActual) => ({ ...(await importActual<typeof import("@/lib/csv")>()), ...csv }));
 const actions = vi.hoisted(() => ({ createCustomer: vi.fn(), updateCustomer: vi.fn(), deleteCustomer: vi.fn() }));
 vi.mock("@/features/customers/server/customer-actions", () => actions);
 
 beforeEach(() => {
   Object.values(toast).forEach((mock) => mock.mockClear());
   Object.values(actions).forEach((mock) => mock.mockReset());
+  csv.downloadCsv.mockReset();
 });
 
 const ALI: Customer = { id: "c1", no: 1, firstName: "Ali", lastName: "Yılmaz", phone: "0532 123 45 67", phone2: "", balance: 15050 };
@@ -191,13 +194,21 @@ describe("CustomersScreen", () => {
     });
   });
 
-  it("tells the user that import and download are not available yet", async () => {
+  it("tells the user that importing customers is not available yet", async () => {
     const user = setup();
 
     await user.click(screen.getByRole("button", { name: "Müşterileri Yükle" }));
+
+    expect(toast.info).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE);
+  });
+
+  it("downloads the customers as a CSV file with balances in lira", async () => {
+    const user = setup([ALI]);
+
     await user.click(screen.getByRole("button", { name: "İndir" }));
 
-    expect(toast.info).toHaveBeenCalledTimes(2);
-    expect(toast.info).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE);
+    expect(csv.downloadCsv).toHaveBeenCalledWith("musteriler.csv", expect.arrayContaining(["Ad", "Bakiye"]), [
+      [1, "Ali", "Yılmaz", "0532 123 45 67", "", "150,50"],
+    ]);
   });
 });

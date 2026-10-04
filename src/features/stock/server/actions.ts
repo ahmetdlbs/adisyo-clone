@@ -5,6 +5,7 @@ import { ROUTES } from "@/config/routes";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import type {
   AdjustStockFormValues,
+  StockCountLine,
   StockItem,
   StockItemFormValues,
 } from "../model/stock-item";
@@ -85,6 +86,16 @@ export async function adjustStockItem(
   } catch (error) {
     throw asError(error, "Stok güncellenemedi");
   }
+}
+
+export async function countStockItems(counts: StockCountLine[]): Promise<void> {
+  try {
+    await apiFetch("/stock-items/count", { method: "POST", body: { counts } });
+  } catch (error) {
+    throw asError(error, "Sayım kaydedilemedi");
+  }
+  revalidatePath(ROUTES.stockList);
+  revalidatePath(ROUTES.stockProductQuantity);
 }
 
 export async function deleteStockItem(id: string): Promise<void> {

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NavDrawer } from "@/components/shell/nav-drawer";
+import { setActiveApps } from "../../support/active-apps-state";
 
 const navigation = vi.hoisted(() => ({ pathname: "/vat-definitions" }));
 const auth = vi.hoisted(() => ({ logout: vi.fn() }));
@@ -106,5 +107,32 @@ describe("NavDrawer", () => {
     await user.click(screen.getByRole("button", { name: "Çıkış Yap" }));
 
     expect(auth.logout).toHaveBeenCalledOnce();
+  });
+
+  describe("by purchased apps", () => {
+    it("hides the kitchen, report wizard, printers and integrations until their apps are bought", () => {
+      setActiveApps(["siparis-masa-yonetimi"]);
+      setup();
+
+      expect(screen.getByRole("link", { name: "Sipariş" })).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Mutfak" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Entegrasyon İşlemleri/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Yazıcılar" })).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Uygulama Mağazası" })).toBeInTheDocument();
+    });
+
+    it("shows the kitchen as soon as its app is active", () => {
+      setActiveApps(["siparis-masa-yonetimi", "mutfak-ekrani"]);
+      setup();
+
+      expect(screen.getByRole("link", { name: "Mutfak" })).toHaveAttribute("href", "/kitchen-detail");
+    });
+
+    it("shows the integration group for a delivery app", () => {
+      setActiveApps(["trendyol-yemek-entegrasyonu"]);
+      setup();
+
+      expect(screen.getByRole("button", { name: /Entegrasyon İşlemleri/ })).toBeInTheDocument();
+    });
   });
 });

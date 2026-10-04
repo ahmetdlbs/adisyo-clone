@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { ProductDetailScreen } from "@/features/pos/components/product-detail-screen";
 import type { Product } from "@/features/pos/model/pos-state";
 import { PosProvider, type PosSnapshot } from "@/features/pos/store/pos-provider";
+import { setActiveApps } from "../../../support/active-apps-state";
 import { buildPosSnapshot, productFixture } from "../../../support/pos-fixtures";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn() }));
@@ -255,5 +256,14 @@ describe("ProductDetailScreen", () => {
       expect(await screen.findByText("Bu kategoride aynı adlı ürün var")).toBeInTheDocument();
       expect(router.push).not.toHaveBeenCalled();
     });
+  });
+
+  it("offers no recipe and cost controls until the recipe & cost app is bought", () => {
+    setActiveApps(["urun-menu-tanimlama"]);
+    setup("new");
+
+    expect(screen.queryByRole("switch", { name: "Reçeteli ürün kullan" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Maliyet tutarı/)).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Stok takibi yap" })).toBeInTheDocument();
   });
 });

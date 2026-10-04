@@ -10,7 +10,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DEMO_IDENTITY } from "@/config/demo-identity";
-import { NAVIGATION, isNavGroup, type NavGroup, type NavLink } from "@/config/navigation";
+import { NAVIGATION, isNavGroup, visibleNavigation, type NavGroup, type NavLink } from "@/config/navigation";
+import { useActiveApps } from "@/features/entitlements/components/active-apps-provider";
 import { useLogout } from "@/features/auth/hooks/use-logout";
 import { cn } from "@/lib/utils";
 import { isRouteActive } from "./nav-utils";
@@ -24,6 +25,7 @@ export function NavDrawer({ open, onOpenChange }: NavDrawerProps) {
   const pathname = usePathname();
   const { logout, isPending: isLoggingOut } = useLogout();
   const close = () => onOpenChange(false);
+  const navigation = visibleNavigation(NAVIGATION, useActiveApps());
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -39,7 +41,7 @@ export function NavDrawer({ open, onOpenChange }: NavDrawerProps) {
         </div>
 
         <nav aria-label="Ana menü" className="flex-1 space-y-1 overflow-y-auto p-2">
-          {NAVIGATION.map((entry) =>
+          {navigation.map((entry) =>
             isNavGroup(entry) ? (
               <NavGroupSection key={entry.label} group={entry} pathname={pathname} onNavigate={close} />
             ) : (

@@ -50,13 +50,20 @@ A screen is a `features/<name>/` package with a thin `page.tsx` in front of it, 
 
 - Money is an integer number of kuruş (`Kurus`), never a float lira. `toKurus` / `parseLira` come in, `formatKurus` goes out; splits use
   `splitEvenly` so shares always add back up to the total.
-- Everything the POS knows is one `PosState` (areas, tables, categories, products, open orders, history). Rules are pure functions in
-  `model/` (`order.ts`, `pos-state.ts`, `floor-plan.ts`, `menu.ts`, `stats.ts`) that throw `Error` with a Turkish message; screens call them
-  through `usePosActions().change(...)` and show the message on the form field or as a toast.
-- The store (`store/pos-provider.tsx`) is `useSyncExternalStore` over `localStorage` key `adisyon-merkezi.pos.v3`, zod-validated on read. The server
-  snapshot is the seed, so hydration never mismatches. Time-dependent text uses `useNow()`, which is `null` until mounted.
-- Only cash may overpay (change is returned); a cancelled bill is kept in `history` with outcome `"cancelled"` so voids stay visible on the
-  dashboard.
+- The database (through `api/`) is the single source of truth. `store/pos-provider.tsx` holds a `PosSnapshot` (areas, tables, categories,
+  products, open orders) seeded from the server in `(app)/layout.tsx`; every mutation goes through `usePosActions()`, which calls a Server
+  Action in `features/pos/server/` and merges the API's response back into the snapshot. Nothing is kept in `localStorage`.
+- `<PosProvider liveSync>` polls open orders every 5 s (everything every 60 s and when the tab becomes visible) so several terminals
+  agree. A read that began before this terminal's own last change is discarded (`lastLocalChange`), so it can never undo that change.
+- Rules that need to be instant on screen live as pure functions in `model/` (`order.ts`: totals, remaining, `canClose`, charges); the API
+  repeats and enforces them. Messages are Turkish; server errors surface as toasts or field errors.
+- Products have portions (each with table/takeaway/delivery price and a recipe of stock lines). `useRecipe` consumes stock when sold; combos
+  (`isCombo`) bundle other products' portions and consume those recipes too. Stock may go negative (soft stock) — it shows as "Eksiye Düştü".
+- Service charges: kuver and garsoniye are defined in settings and snapshotted onto an order as `charges`; percent charges apply after the
+  discount, a fixed kuver is multiplied by `guestCount` ("Kişi sayısı" stepper in the ticket panel).
+- Payments: cash may overpay (change returned); `ON_ACCOUNT` ("Hesaba Yaz") needs a customer and adds to their balance. A cancelled bill
+  restores its stock; an order with lines or payments cannot be discarded.
+- Lists that have an "İndir" button export with `lib/csv.ts` (`downloadCsv`: `;`-separated, UTF-8 BOM, formula-safe). `kurusCell` writes lira.
 
 ## Auth & the backend (`api/`)
 
@@ -75,8 +82,26 @@ A screen is a `features/<name>/` package with a thin `page.tsx` in front of it, 
 - The App Store screen (`features/app-store/`) is the one fully wired example: `(app)/app-store/page.tsx` fetches
   `/apps-catalog` + `/billing/entitlements` from `api/`, and `purchaseApp` (Server Action) posts
   `/billing/checkout` — payment is mocked there (`api/`'s `BillingService`), not here.
-- Not built yet: registration/reset e-mail backend, login rate limiting, CSP with nonces, entitlement gating on any
-  screen other than App Store, real payment/third-party integration code (mocked in `api/` by design for now).
+- Sign-in works for owners (`User`) and for staff created under Kullanıcılar (`StaffMember`: MANAGER → manager, others → staff; a
+  blocked member is refused after a correct password). `POST /auth/login` is limited to 10 tries a minute per e-mail (429 after that).
+- `next.config.ts` sends security headers everywhere and a Content-Security-Policy in production only (scripts keep `'unsafe-inline'`;
+  a nonce policy would make every page dynamic).
+- Not built: registration/reset e-mail backend, entitlement gating on any screen other than App Store, marş (course) sequencing in the
+  kitchen, printer settings, real payment/third-party integrations (mocked in `api/` by design).
+
+## App Store gating (`features/entitlements`)
+
+- The store is the single source of truth for what a restaurant sees. `(app)/layout.tsx` fetches `GET /billing/active-apps` (core apps
+  plus every unexpired purchase) into `<ActiveAppsProvider>`; `useHasApp([...keys])` reads it. Keys live in
+  `features/entitlements/model/app-keys.ts`.
+- Menu: `NAVIGATION` entries/groups carry `requires: [appKey, ...]`; `visibleNavigation()` drops what is not bought. Screens: a page that
+  belongs to an app starts with `await requireApp([...])` (redirects to `/app-store?need=<key>`, which explains the missing app). Hiding the
+  menu entry is never enough on its own.
+- Parts of a screen follow the same rule (dashboard cost/profit and the product form's recipe/cost controls need `recete-maliyet-takibi`).
+- Apps listed but not built are `isAvailable: false` ("Yakında"): visible, never purchasable. `purchaseApp` refreshes the whole layout so
+  the new menu entry appears at once. Tests default to every app active (see `vitest.setup.ts`); narrow it with `setActiveApps`.
+- Delivery integrations are set up at `/integration-settings` (credentials are encrypted by the API and never sent back). See INTEGRATIONS.md
+  at the repository root for what is live and what each platform needs.
 
 ## Checks (run before committing)
 
@@ -84,3 +109,4 @@ A screen is a `features/<name>/` package with a thin `page.tsx` in front of it, 
 - `npm run test:run` (Vitest + Testing Library; server modules and filesystem checks use `// @vitest-environment node`)
 - `npm run test:coverage` (80% gate on `lib`, `hooks`, `config`, `components/kit`, `components/shell`, `features`, `proxy.ts`)
 - `npm run lint` (legacy views still have errors; code under the paths above must be clean)
+- `api/`: `npx tsc --noEmit`, `npx jest`, and with the API running `npm run e2e` (two throw-away tenants; cleans up after itself)

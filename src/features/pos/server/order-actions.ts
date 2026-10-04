@@ -94,6 +94,14 @@ export async function setChargesAction(orderId: string, charges: { kuver: boolea
   }
 }
 
+export async function setGuestsAction(orderId: string, count: number): Promise<Order> {
+  try {
+    return toOrder(await apiFetch<ApiOrder>(`/orders/${orderId}/guests`, { method: "PUT", body: { count } }));
+  } catch (error) {
+    throw asError(error, "Kişi sayısı güncellenemedi");
+  }
+}
+
 export async function resetOrderAction(orderId: string): Promise<Order> {
   try {
     return toOrder(await apiFetch<ApiOrder>(`/orders/${orderId}/reset`, { method: "POST" }));

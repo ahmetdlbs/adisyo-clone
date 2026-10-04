@@ -32,6 +32,7 @@ const actions = vi.hoisted(() => ({
   resetOrderAction: vi.fn(),
   setDiscountAction: vi.fn(),
   setChargesAction: vi.fn(),
+  setGuestsAction: vi.fn(),
   applyPaymentAction: vi.fn(),
   closeOrderAction: vi.fn(),
   cancelOrderAction: vi.fn(),
@@ -650,5 +651,23 @@ describe("service charges", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Garsoniye ekle" }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Garsoniye tanımlı değil"));
+  });
+
+  it("lets the cashier set how many guests the per-person kuver is charged for", async () => {
+    const bill = buildPosSnapshot().orders[0]!;
+    const kuver = { which: "kuver" as const, name: "Kuver", kind: "amount" as const, amount: 2500 };
+    const withKuver = { ...bill, charges: [kuver], guestCount: 1 };
+    actions.setChargesAction.mockResolvedValue(withKuver);
+    actions.setGuestsAction.mockResolvedValue({ ...withKuver, guestCount: 2 });
+    const { user } = setup();
+    await user.click(table("Masa 1"));
+    await user.click(screen.getByRole("button", { name: "Servis ücreti" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Kuver ekle" }));
+
+    await user.click(await screen.findByRole("button", { name: "Kişi sayısını arttır" }));
+
+    await waitFor(() => expect(actions.setGuestsAction).toHaveBeenCalledWith("o1", 2));
+    expect(await ticket().findByText("Kuver × 2")).toBeInTheDocument();
+    expect(totalOf()).toHaveTextContent("₺259,00");
   });
 });

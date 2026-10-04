@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { formatClock } from "@/lib/format";
 import { formatKurus } from "@/lib/money";
+import { downloadCsv, kurusCell } from "@/lib/csv";
 import { notifyUnavailable } from "@/lib/notify";
 import { totalWastageCost, type Wastage, type WastageFormValues } from "../model/wastage";
 import { createWastage } from "../server/actions";
@@ -17,6 +18,13 @@ import { WastageFormDialog } from "./wastage-form-dialog";
 
 export function WastageScreen({ wastages, stockItems = [] }: { wastages: readonly Wastage[]; stockItems?: readonly StockItem[] }) {
   const dialog = useEntityDialog<never>();
+
+  const handleExport = () =>
+    downloadCsv(
+      "zayi-islemleri.csv",
+      ["Ürün", "Zayi Nedeni", "Miktar", "Tarih", "Sorumlu", "Maliyet"],
+      wastages.map((wastage) => [wastage.productName, wastage.reason, wastage.quantity, wastage.occurredAt, wastage.responsible, kurusCell(wastage.cost)]),
+    );
 
   const handleSave = async (values: WastageFormValues) => {
     await createWastage(values);
@@ -47,7 +55,7 @@ export function WastageScreen({ wastages, stockItems = [] }: { wastages: readonl
                 <Users />
                 Sorumluları Düzenle
               </Button>
-              <Button variant="ghost" className="text-primary" onClick={notifyUnavailable}>
+              <Button variant="ghost" className="text-primary" onClick={handleExport}>
                 <Download />
                 İndir
               </Button>

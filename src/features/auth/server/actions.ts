@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/config/routes";
 import { safeRedirectPath } from "../model/access";
+import { ApiError } from "@/lib/api-client";
 import { loginSchema, type LoginState } from "../model/login";
-import { verifyCredentials } from "./credentials";
+import { registerSchema, type RegisterFormInput, type RegisterState } from "../model/register";
+import { registerRestaurant, verifyCredentials } from "./credentials";
 import { createSession, deleteSession } from "./session";
 
 // One message for "no such user" and "wrong password": the response must not say which one it was.
@@ -39,6 +41,28 @@ export async function loginAction(_previous: LoginState, formData: FormData): Pr
 
   const next = formData.get("next");
   redirect(safeRedirectPath(typeof next === "string" ? next : undefined));
+}
+
+const EMAIL_TAKEN_MESSAGE = "Bu e-posta ile kayıtlı bir hesap var. Giriş yapmayı deneyin.";
+const TOO_MANY_ATTEMPTS_MESSAGE = "Çok fazla deneme yapıldı. Lütfen biraz bekleyip tekrar deneyin.";
+const REGISTER_FAILED_MESSAGE = "Kayıt tamamlanamadı. Lütfen daha sonra tekrar deneyin.";
+
+/** Creates the restaurant and signs its owner in. The form's rules are re-checked here: the client is not trusted. */
+export async function registerAction(input: RegisterFormInput): Promise<RegisterState> {
+  const parsed = registerSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? REGISTER_FAILED_MESSAGE };
+
+  let result;
+  try {
+    result = await registerRestaurant(parsed.data);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) return { ok: false, message: EMAIL_TAKEN_MESSAGE, field: "email" };
+    if (error instanceof ApiError && error.status === 429) return { ok: false, message: TOO_MANY_ATTEMPTS_MESSAGE };
+    return { ok: false, message: REGISTER_FAILED_MESSAGE };
+  }
+
+  await createSession(result.token);
+  return { ok: true };
 }
 
 export async function logoutAction(): Promise<void> {

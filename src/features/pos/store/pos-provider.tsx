@@ -34,6 +34,7 @@ import {
   removeLineAction,
   resetOrderAction,
   setChargesAction,
+  setGuestsAction,
   setDiscountAction,
   toggleComplimentaryAction,
 } from "../server/order-actions";
@@ -142,6 +143,7 @@ export interface PosActions {
   resetOrder(orderId: string): Promise<void>;
   setDiscount(orderId: string, percent: number): Promise<void>;
   setCharges(orderId: string, charges: { kuver: boolean; garsoniye: boolean }): Promise<void>;
+  setGuests(orderId: string, count: number): Promise<void>;
   applyPayment(
     orderId: string,
     request: { method: PaymentMethod; tendered: Kurus; lineIds?: readonly string[]; customerId?: string }
@@ -189,6 +191,9 @@ export function usePosActions(): PosActions {
     },
     async resetOrder(orderId) {
       setSnapshot(withOrder(await resetOrderAction(orderId)));
+    },
+    async setGuests(orderId, count) {
+      setSnapshot(withOrder(await setGuestsAction(orderId, count)));
     },
     async setCharges(orderId, charges) {
       setSnapshot(withOrder(await setChargesAction(orderId, charges)));

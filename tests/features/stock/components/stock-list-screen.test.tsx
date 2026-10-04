@@ -13,7 +13,10 @@ const actions = vi.hoisted(() => ({
   updateStockItem: vi.fn(),
   adjustStockItem: vi.fn(),
   deleteStockItem: vi.fn(),
+  countStockItems: vi.fn(),
 }));
+const csv = vi.hoisted(() => ({ downloadCsv: vi.fn() }));
+vi.mock("@/lib/csv", async (importActual) => ({ ...(await importActual<typeof import("@/lib/csv")>()), ...csv }));
 vi.mock("@/features/stock/server/actions", () => actions);
 
 beforeEach(() => {
@@ -21,6 +24,7 @@ beforeEach(() => {
   toast.error.mockClear();
   toast.info.mockClear();
   Object.values(actions).forEach((mock) => mock.mockReset());
+  csv.downloadCsv.mockReset();
 });
 
 const UNITS: Unit[] = [{ id: "u1", name: "Kg" }];
@@ -112,12 +116,49 @@ describe("StockListScreen", () => {
     expect(actions.deleteStockItem).toHaveBeenCalledWith("s2");
   });
 
-  it("sends İndir and Stok Sayımı to notifyUnavailable — neither is built yet", async () => {
+  it("downloads the stock list as a CSV file", async () => {
     const { user } = setup();
 
     await user.click(screen.getByRole("button", { name: "İndir" }));
-    await user.click(screen.getByRole("button", { name: "Stok Sayımı" }));
 
-    expect(toast.info).toHaveBeenCalledTimes(2);
+    expect(csv.downloadCsv).toHaveBeenCalledWith("stok-listesi.csv", expect.arrayContaining(["Stok Kartı", "Stok Değeri"]), [
+      ["Dana Kıyma", 5, "Kg", "40,00", "200,00", 2],
+      ["Domates", 1, "Kg", "", "", 2],
+    ]);
+  });
+
+  it("sends only the changed counts from the stock count sheet", async () => {
+    actions.countStockItems.mockResolvedValue(undefined);
+    const { user } = setup();
+
+    await user.click(screen.getByRole("button", { name: "Stok Sayımı" }));
+    const sheet = within(screen.getByRole("dialog"));
+    await user.type(sheet.getByLabelText(/Dana Kıyma/), "4,5");
+    await user.type(sheet.getByLabelText(/Domates/), "1");
+    await user.click(screen.getByRole("button", { name: "Sayımı Kaydet" }));
+
+    await waitFor(() => expect(actions.countStockItems).toHaveBeenCalledWith([{ stockItemId: "s1", quantity: 4.5 }]));
+    expect(toast.success).toHaveBeenCalledWith("1 stok kartı sayıma göre güncellendi");
+  });
+
+  it("keeps the count sheet open and shows why when it cannot be saved", async () => {
+    actions.countStockItems.mockRejectedValue(new Error("Stok kartı bulunamadı"));
+    const { user } = setup();
+
+    await user.click(screen.getByRole("button", { name: "Stok Sayımı" }));
+    await user.type(within(screen.getByRole("dialog")).getByLabelText(/Dana Kıyma/), "3");
+    await user.click(screen.getByRole("button", { name: "Sayımı Kaydet" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Stok kartı bulunamadı");
+  });
+
+  it("rejects an empty count sheet without calling the server", async () => {
+    const { user } = setup();
+
+    await user.click(screen.getByRole("button", { name: "Stok Sayımı" }));
+    await user.click(screen.getByRole("button", { name: "Sayımı Kaydet" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("değişen bir miktar yok");
+    expect(actions.countStockItems).not.toHaveBeenCalled();
   });
 });

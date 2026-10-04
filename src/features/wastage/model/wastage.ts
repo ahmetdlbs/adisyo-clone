@@ -103,3 +103,26 @@ export const totalWastageCost = (wastages: readonly Wastage[]): Kurus =>
 /** What a search box looks through. */
 export const wastageSearchText = (wastage: Wastage): string =>
   `${wastage.productName} ${wastage.reason} ${wastage.responsible}`;
+
+export interface WastageByProduct {
+  productName: string;
+  /** How many wastage records this product has. */
+  count: number;
+  quantity: number;
+  cost: Kurus;
+}
+
+/** One row per product, costliest first (ties by name), summing every record of that product. */
+export const wastageByProduct = (wastages: readonly Wastage[]): WastageByProduct[] => {
+  const totals = new Map<string, WastageByProduct>();
+  for (const wastage of wastages) {
+    const current = totals.get(wastage.productName) ?? { productName: wastage.productName, count: 0, quantity: 0, cost: 0 };
+    totals.set(wastage.productName, {
+      ...current,
+      count: current.count + 1,
+      quantity: current.quantity + wastage.quantity,
+      cost: current.cost + wastage.cost,
+    });
+  }
+  return [...totals.values()].sort((a, b) => b.cost - a.cost || a.productName.localeCompare(b.productName, "tr"));
+};

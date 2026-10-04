@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { verifyCredentials } from "@/features/auth/server/credentials";
+import { registerRestaurant, verifyCredentials } from "@/features/auth/server/credentials";
 import { ApiError } from "@/lib/api-client";
 
 const mocks = vi.hoisted(() => ({ apiFetch: vi.fn() }));
@@ -50,5 +50,34 @@ describe("verifyCredentials", () => {
     await expect(verifyCredentials({ username: "demo@adisyonmerkezi.com", password: "demo1234" })).rejects.toThrow(
       TypeError
     );
+  });
+});
+
+describe("registerRestaurant", () => {
+  it("posts the sign-up to api/ with the country code joined to the phone", async () => {
+    mocks.apiFetch.mockReset().mockResolvedValue(LOGIN_RESULT);
+
+    const result = await registerRestaurant({
+      restaurantName: "Lezzet Durağı",
+      fullName: "Ahmet Yılmaz",
+      email: "ahmet@lezzet.test",
+      countryCode: "+90",
+      phone: "5321112233",
+      password: "Sifre1234",
+      passwordConfirm: "Sifre1234",
+      acceptedTerms: true,
+    });
+
+    expect(result).toEqual(LOGIN_RESULT);
+    expect(mocks.apiFetch).toHaveBeenCalledWith("/auth/register", {
+      method: "POST",
+      body: {
+        restaurantName: "Lezzet Durağı",
+        fullName: "Ahmet Yılmaz",
+        email: "ahmet@lezzet.test",
+        phone: "+905321112233",
+        password: "Sifre1234",
+      },
+    });
   });
 });

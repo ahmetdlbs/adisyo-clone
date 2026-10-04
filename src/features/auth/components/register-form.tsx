@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { ROUTES } from "@/config/routes";
+import { registerAction } from "../server/actions";
 import {
   COUNTRY_CODE_OPTIONS,
   registerSchema,
@@ -32,8 +33,16 @@ export function RegisterForm() {
     },
   });
 
-  // TODO(backend): create the account. Until one exists, a valid form simply moves on to onboarding.
-  const onSubmit = () => router.push(ROUTES.onboarding);
+  const onSubmit = async (values: RegisterFormValues) => {
+    const result = await registerAction(values);
+    if (result.ok) {
+      router.push(ROUTES.dashboard);
+      return;
+    }
+    // A taken e-mail belongs on the e-mail field; anything else (outage, rate limit) is a form-level message.
+    if (result.field) form.setError(result.field, { message: result.message });
+    else form.setError("root", { message: result.message });
+  };
 
   return (
     <div>
@@ -79,6 +88,12 @@ export function RegisterForm() {
               </>
             }
           />
+
+          {form.formState.errors.root && (
+            <p role="alert" className="text-sm text-destructive">
+              {form.formState.errors.root.message}
+            </p>
+          )}
 
           <Button type="submit" size="xl" className="w-full text-base" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting && <Spinner />}

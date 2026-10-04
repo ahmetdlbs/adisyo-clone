@@ -19,6 +19,8 @@ import type { FeatureGroup } from "@/features/catalog/model/feature-group";
 import type { KitchenGroup } from "@/features/catalog/model/kitchen-group";
 import type { Unit } from "@/features/catalog/model/unit";
 import type { VatDefinition } from "@/features/catalog/model/vat";
+import { useHasApp } from "@/features/entitlements/components/active-apps-provider";
+import { APP_KEYS } from "@/features/entitlements/model/app-keys";
 import type { StockItem } from "@/features/stock/model/stock-item";
 import { ROUTES } from "@/config/routes";
 import { toAmountText } from "@/lib/money";
@@ -134,6 +136,7 @@ function ProductForm({
   onDelete,
 }: ProductFormProps) {
   const router = useRouter();
+  const hasRecipeApp = useHasApp([APP_KEYS.recipeCost]);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const form = useForm<ProductFormInput, unknown, ProductFormValues>({
@@ -258,12 +261,14 @@ function ProductForm({
 
             <PageCard className="gap-1 p-6">
               <h2 className="pb-2 text-base font-semibold tracking-tight text-foreground">Diğer</h2>
-              <SwitchField
-                control={form.control}
-                name="useRecipe"
-                label="Reçeteli ürün kullan"
-                description="Porsiyonlarda tükettiği hammaddeleri aşağıda tanımlayın."
-              />
+              {hasRecipeApp && (
+                <SwitchField
+                  control={form.control}
+                  name="useRecipe"
+                  label="Reçeteli ürün kullan"
+                  description="Porsiyonlarda tükettiği hammaddeleri aşağıda tanımlayın."
+                />
+              )}
               <SwitchField
                 control={form.control}
                 name="trackStock"
@@ -454,6 +459,7 @@ interface PortionCardProps {
 
 /** One portion's own field array, so its "Reçete" rows can have their own `useFieldArray`. */
 function PortionCard({ form, index, rowErrors, units, stockItems, useRecipe, trackStock, canRemove, onRemove, onMakeDefault }: PortionCardProps) {
+  const hasRecipeApp = useHasApp([APP_KEYS.recipeCost]);
   const recipeLines = useFieldArray({ control: form.control, name: `portions.${index}.recipeLines` });
   const recipeLinesErrors = rowErrors?.recipeLines;
 
@@ -518,10 +524,12 @@ function PortionCard({ form, index, rowErrors, units, stockItems, useRecipe, tra
       </div>
       <div className="grid grid-cols-2 gap-3">
         <SelectField control={form.control} name={`portions.${index}.unitId`} label="Birim" options={units.map((unit) => ({ value: unit.id, label: unit.name }))} />
-        <PortionAmountField form={form} index={index} field="costAmount" label="Maliyet Tutarı" ariaLabel={`Maliyet tutarı ${index + 1}`} error={rowErrors?.costAmount} />
+        {hasRecipeApp && (
+          <PortionAmountField form={form} index={index} field="costAmount" label="Maliyet Tutarı" ariaLabel={`Maliyet tutarı ${index + 1}`} error={rowErrors?.costAmount} />
+        )}
       </div>
 
-      {useRecipe && (
+      {useRecipe && hasRecipeApp && (
         <div className="grid gap-2 rounded-md border border-dashed p-3">
           <div className="flex items-center justify-between">
             <span className="text-[13px] font-semibold text-foreground/90">Reçete</span>

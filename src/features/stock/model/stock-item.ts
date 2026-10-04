@@ -98,3 +98,28 @@ export const adjustStockFormSchema = z.object({
 });
 export type AdjustStockFormInput = z.input<typeof adjustStockFormSchema>;
 export type AdjustStockFormValues = z.output<typeof adjustStockFormSchema>;
+
+export interface StockCountLine {
+  stockItemId: string;
+  quantity: number;
+}
+
+export type StockCountResult = { ok: true; lines: StockCountLine[] } | { ok: false; message: string };
+
+/**
+ * Turns what was typed in the count sheet into the lines to send: blank cells and quantities equal to the
+ * system's are skipped, and one bad or negative number rejects the whole sheet so nothing is half-counted.
+ */
+export function buildStockCount(items: readonly StockItem[], entries: Readonly<Record<string, string>>): StockCountResult {
+  const lines: StockCountLine[] = [];
+  for (const item of items) {
+    const typed = (entries[item.id] ?? "").trim();
+    if (typed === "") continue;
+    const quantity = toNumber(typed);
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      return { ok: false, message: `"${item.name}" için geçerli bir miktar giriniz` };
+    }
+    if (quantity !== item.quantity) lines.push({ stockItemId: item.id, quantity });
+  }
+  return lines.length === 0 ? { ok: false, message: "Sayım sonucunda değişen bir miktar yok" } : { ok: true, lines };
+}

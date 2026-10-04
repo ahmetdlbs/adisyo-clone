@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { DashboardScreen } from "@/features/pos/components/dashboard-screen";
 import type { DaySummary } from "@/features/pos/model/stats";
 import { PosProvider, type PosSnapshot } from "@/features/pos/store/pos-provider";
+import { setActiveApps } from "../../../support/active-apps-state";
 import { buildDaySummary, buildPosSnapshot } from "../../../support/pos-fixtures";
 
 const EMPTY_SNAPSHOT: PosSnapshot = { areas: [], tables: [], categories: [], products: [], orders: [] };
@@ -145,5 +146,14 @@ describe("DashboardScreen", () => {
       expect(screen.getByText("Tanımlı masa yok")).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Masa / Bölge Tanımla" })).toHaveAttribute("href", "/table-area-definition");
     });
+  });
+
+  it("hides cost and profit until the recipe & cost app is bought", () => {
+    setActiveApps(["siparis-masa-yonetimi"]);
+    setup(TRADING_DAY);
+
+    expect(screen.queryByRole("heading", { level: 2, name: "Finansal Analiz & Kârlılık" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Brüt Kâr" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Genel Durum" })).toBeInTheDocument();
   });
 });

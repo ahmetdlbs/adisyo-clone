@@ -1,45 +1,52 @@
-import { CheckCircle2, TriangleAlert } from "lucide-react";
-import { PageContainer } from "@/components/kit/page";
+"use client";
 
-/** A module upsell page in the original app: explains a feature that is not enabled, rather than showing data. */
-export function WastageProductReportScreen() {
+import { useMemo } from "react";
+import { Download, Flame } from "lucide-react";
+import { DataTable, type DataTableColumn } from "@/components/kit/data-table";
+import { PageBody, PageCard, PageContainer } from "@/components/kit/page";
+import { PageHeader } from "@/components/kit/page-header";
+import { Button } from "@/components/ui/button";
+import { downloadCsv, kurusCell } from "@/lib/csv";
+import { formatKurus } from "@/lib/money";
+import { totalWastageCost, wastageByProduct, type Wastage, type WastageByProduct } from "@/features/wastage/model/wastage";
+
+/** Zayi/fire records rolled up per product: how often, how much and what it cost. */
+export function WastageProductReportScreen({ wastages }: { wastages: readonly Wastage[] }) {
+  const rows = useMemo(() => wastageByProduct(wastages), [wastages]);
+
+  const columns: readonly DataTableColumn<WastageByProduct>[] = [
+    { id: "product", header: "Ürün", cell: (row) => row.productName },
+    { id: "count", header: "Kayıt", align: "right", cell: (row) => row.count },
+    { id: "quantity", header: "Toplam Miktar", align: "right", cell: (row) => row.quantity },
+    { id: "cost", header: "Maliyet", align: "right", cell: (row) => formatKurus(row.cost) },
+  ];
+
+  const handleExport = () =>
+    downloadCsv(
+      "fire-raporu.csv",
+      ["Ürün", "Kayıt", "Toplam Miktar", "Maliyet"],
+      rows.map((row) => [row.productName, row.count, row.quantity, kurusCell(row.cost)]),
+    );
+
   return (
-    <PageContainer className="max-w-3xl gap-8">
-      <section>
-        <div className="mb-4 flex items-center gap-3">
-          <TriangleAlert aria-hidden="true" className="text-warning" />
-          <h1 className="text-base font-bold text-foreground">Fire Tanımı Nedir?</h1>
-        </div>
-        <p className="ml-9 text-[15px] leading-relaxed text-foreground">
-          Bu ekran, seçili hammadde ürünleriniz için fire miktarını takip edebilmenizi sağlar. Ürün bazında beklenen ve kabul edilebilir fire
-          oranlarını girerek, gün sonunda gerçekleşen fire miktarlarını analiz edebilirsiniz. Fire takibi, hammadde israfını azaltarak maliyet
-          kontrolü sağlamanıza yardımcı olur.
-        </p>
-      </section>
-
-      <section>
-        <div className="mb-4 flex items-center gap-3">
-          <CheckCircle2 aria-hidden="true" className="text-success" />
-          <h2 className="text-base font-bold text-foreground">Nasıl Aktif Edilir?</h2>
-        </div>
-        <div className="ml-9 flex flex-col gap-6 text-[15px] leading-relaxed text-foreground">
-          <p>
-            Fire modülü ile ilgili ücretlendirme ve detaylı bilgi için{" "}
-            <a href="mailto:info@adisyonmerkezi.com" className="text-primary hover:underline">
-              info@adisyonmerkezi.com
-            </a>{" "}
-            adresine yazabilir veya{" "}
-            <a href="tel:02167060624" className="text-primary hover:underline">
-              0216 706 06 24
-            </a>{" "}
-            numaralı satış hattımızdan bizimle iletişime geçebilirsiniz.
-          </p>
-          <p>
-            Fire yüzdesinin hesaplanabilmesi için, gün başı ve gün sonu işlemleri sırasında ilgili ürünlerin çiğ ve pişmiş miktarlarını girmeniz
-            gerekmektedir.
-          </p>
-        </div>
-      </section>
+    <PageContainer className="max-w-4xl">
+      <PageCard>
+        <PageHeader
+          className="p-6"
+          icon={Flame}
+          title="Fire Raporu"
+          description={`${rows.length} ürün · Toplam fire maliyeti: ${formatKurus(totalWastageCost(wastages))}`}
+          actions={
+            <Button variant="ghost" className="text-primary" onClick={handleExport} disabled={rows.length === 0}>
+              <Download />
+              İndir
+            </Button>
+          }
+        />
+        <PageBody className="pt-4">
+          <DataTable columns={columns} rows={rows} getRowId={(row) => row.productName} caption="Ürün bazlı fire raporu" emptyMessage="Henüz fire / zayi kaydı yok." />
+        </PageBody>
+      </PageCard>
     </PageContainer>
   );
 }

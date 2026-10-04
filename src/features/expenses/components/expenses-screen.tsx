@@ -13,6 +13,7 @@ import { useEntityDialog } from "@/hooks/use-entity-dialog";
 import { usePagination } from "@/hooks/use-pagination";
 import { formatClock } from "@/lib/format";
 import { formatKurus } from "@/lib/money";
+import { downloadCsv, kurusCell } from "@/lib/csv";
 import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
 import { EXPENSE_PAYMENT_METHODS, expenseSearchText, type Expense, type ExpenseFormValues } from "../model/expense";
@@ -26,6 +27,19 @@ export function ExpensesScreen({ expenses }: { expenses: readonly Expense[] }) {
   const dialog = useEntityDialog<never>();
 
   const pager = usePagination(filterByQuery(expenses, query, expenseSearchText));
+
+  const handleExport = () =>
+    downloadCsv(
+      "masraflar.csv",
+      ["Masraf Tipi", "Tarih", "Ödeme Tipi", "Tutar", "Not"],
+      filterByQuery(expenses, query, expenseSearchText).map((expense) => [
+        expense.type,
+        expense.occurredAt,
+        methodLabel(expense.paymentMethod),
+        kurusCell(expense.amount),
+        expense.note,
+      ]),
+    );
 
   const handleSave = async (values: ExpenseFormValues) => {
     await createExpense(values);
@@ -51,7 +65,7 @@ export function ExpensesScreen({ expenses }: { expenses: readonly Expense[] }) {
           description="Gider ve masraflarınızı bu sayfadan yönetebilirsiniz."
           actions={
             <>
-              <Button variant="ghost" className="text-primary" onClick={notifyUnavailable}>
+              <Button variant="ghost" className="text-primary" onClick={handleExport}>
                 <Download />
                 İndir
               </Button>

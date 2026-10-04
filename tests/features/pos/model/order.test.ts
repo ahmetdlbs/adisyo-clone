@@ -381,6 +381,12 @@ describe("service charges", () => {
     expect(canClose(order)).toBe(false);
   });
 
+  it("charges a fixed kuver once per guest, but a garsoniye only once", () => {
+    const order = withLines({ guestCount: 4, charges: [kuver, { which: "garsoniye", name: "Servis", kind: "amount", amount: 1000 }] });
+
+    expect(chargesTotal(order)).toBe(4 * 2500 + 1000);
+  });
+
   it("is unchanged for a bill without charges", () => {
     expect(chargesTotal(withLines())).toBe(0);
   });

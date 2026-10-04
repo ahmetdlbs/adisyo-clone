@@ -1,19 +1,23 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Plus } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { ArrowRight, Info, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { SearchInput } from "@/components/kit/search-input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatKurus } from "@/lib/money";
-import { notifyUnavailable } from "@/lib/notify";
 import { filterByQuery } from "@/lib/search";
 import {
+  appRoute,
   appsInCategory,
   categoryOptions,
   isInstalled,
+  isIntegrationApp,
+  renewalDate,
   type AppEntitlement,
   type CatalogApp,
   type CategoryId,
@@ -24,21 +28,39 @@ type Tab = "store" | "installed";
 
 interface AppStoreScreenProps {
   apps: readonly CatalogApp[];
+  /** Keys of the apps usable right now (the API already accounts for expiry). */
+  activeKeys: readonly string[];
+  /** Purchase records, used only to show when a purchase renews. Empty for roles that cannot see billing. */
   entitlements: readonly AppEntitlement[];
+  /** Set when a screen sent the user here because its app is missing. */
+  needKey?: string;
 }
 
-export function AppStoreScreen({ apps, entitlements }: AppStoreScreenProps) {
+export function AppStoreScreen({ apps, activeKeys, entitlements, needKey }: AppStoreScreenProps) {
+  const active = useMemo(() => new Set(activeKeys), [activeKeys]);
+  const neededApp = needKey ? apps.find((app) => app.key === needKey) : undefined;
   const [tab, setTab] = useState<Tab>("store");
   const [category, setCategory] = useState<CategoryId>("all");
   const [query, setQuery] = useState("");
 
-  const installedApps = apps.filter((app) => isInstalled(app, entitlements));
+  const installedApps = apps.filter((app) => isInstalled(app, active));
   const inTab = tab === "installed" ? installedApps : apps;
   const visibleApps = filterByQuery(appsInCategory(inTab, category), query, (app) => app.name);
 
   return (
     <div className="flex h-full flex-col gap-8 overflow-auto p-8">
       <div>
+        {neededApp && !isInstalled(neededApp, active) && (
+          <Alert className="mb-6">
+            <Info />
+            <AlertTitle>Bu ekran için &quot;{neededApp.name}&quot; gerekiyor</AlertTitle>
+            <AlertDescription>
+              {neededApp.isAvailable
+                ? "Aşağıdan ekleyin; satın alır almaz menünüzde görünür."
+                : "Bu uygulama henüz satışta değil."}
+            </AlertDescription>
+          </Alert>
+        )}
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Uygulama Mağazası</h1>
         <p className="text-sm text-muted-foreground">İşletmenizi büyütmek için ihtiyacınız olan tüm çözümleri tek noktadan yönetin.</p>
 
@@ -83,7 +105,7 @@ export function AppStoreScreen({ apps, entitlements }: AppStoreScreenProps) {
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {visibleApps.map((app) => (
-                <AppCard key={app.id} app={app} installed={isInstalled(app, entitlements)} />
+                <AppCard key={app.id} app={app} installed={isInstalled(app, active)} renewsAt={renewalDate(app, entitlements)} />
               ))}
             </div>
           )}
@@ -93,7 +115,7 @@ export function AppStoreScreen({ apps, entitlements }: AppStoreScreenProps) {
   );
 }
 
-function AppCard({ app, installed }: { app: CatalogApp; installed: boolean }) {
+function AppCard({ app, installed, renewsAt }: { app: CatalogApp; installed: boolean; renewsAt: string | null }) {
   const [isPending, startTransition] = useTransition();
 
   function handlePurchase() {
@@ -104,23 +126,34 @@ function AppCard({ app, installed }: { app: CatalogApp; installed: boolean }) {
     });
   }
 
+  const route = appRoute(app);
+
   return (
     <div className="flex h-full flex-col rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="mb-4 flex items-center gap-3">
         <div aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground shadow-sm">
           {app.name.charAt(0)}
         </div>
-        <h3 className="text-[15px] leading-tight font-bold text-foreground">{app.name}</h3>
+        <h3 className="flex-1 text-[15px] leading-tight font-bold text-foreground">{app.name}</h3>
+        {installed && <Badge variant="secondary">Kurulu</Badge>}
+        {!app.isAvailable && <Badge variant="outline">Yakında</Badge>}
       </div>
       <p className="mb-5 flex-1 text-[13px] leading-relaxed text-muted-foreground">{app.description}</p>
-      <div className="mt-auto flex items-center justify-between border-t pt-4">
-        {!app.isCore && <span className="text-[13px] font-bold text-foreground">{formatKurus(app.monthlyPrice)} / ay</span>}
-        {installed ? (
-          <Button variant="outline" size="sm" className="ml-auto" onClick={notifyUnavailable}>
-            Yönet
-          </Button>
+      <div className="mt-auto flex items-center justify-between gap-2 border-t pt-4">
+        {installed && renewsAt ? (
+          <span className="text-xs text-muted-foreground">Yenileme: {new Date(renewsAt).toLocaleDateString("tr-TR")}</span>
         ) : (
-          <Button variant="outline" size="sm" className="ml-auto" disabled={isPending} onClick={handlePurchase}>
+          !app.isCore && <span className="text-[13px] font-bold text-foreground">{formatKurus(app.monthlyPrice)} / ay</span>
+        )}
+        {installed ? (
+          route ? (
+            <Link href={route} className={buttonVariants({ variant: "outline", size: "sm", className: "ml-auto" })}>
+              {isIntegrationApp(app) ? "Kurulum" : "Aç"}
+              <ArrowRight />
+            </Link>
+          ) : null
+        ) : (
+          <Button variant="outline" size="sm" className="ml-auto" disabled={isPending || !app.isAvailable} onClick={handlePurchase}>
             <Plus />
             Ekle
           </Button>

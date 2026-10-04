@@ -73,6 +73,8 @@ export interface Order {
   payments: readonly Payment[];
   /** Kuver / garsoniye applied to this bill; none when absent. */
   charges?: readonly OrderCharge[];
+  /** Guests at the table; a fixed-amount kuver is charged for each. Defaults to 1. */
+  guestCount?: number;
 }
 
 export const LATE_AFTER_MINUTES = 15;
@@ -89,7 +91,9 @@ export const discountAmount = (order: Order): Kurus => percentOf(subtotal(order)
 
 /** What the bill's charges add: a fixed amount, or a percent of the subtotal after the discount. */
 export const chargeAmount = (order: Order, charge: OrderCharge): Kurus =>
-  charge.kind === "amount" ? charge.amount : percentOf(subtotal(order) - discountAmount(order), charge.amount);
+  charge.kind === "amount"
+    ? charge.amount * (charge.which === "kuver" ? (order.guestCount ?? 1) : 1)
+    : percentOf(subtotal(order) - discountAmount(order), charge.amount);
 
 export const chargesTotal = (order: Order): Kurus => (order.charges ?? []).reduce((sum, charge) => sum + chargeAmount(order, charge), 0);
 

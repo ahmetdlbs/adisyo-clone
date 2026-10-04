@@ -10,23 +10,26 @@ import { RowActions } from "@/components/kit/row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEntityDialog } from "@/hooks/use-entity-dialog";
-import { notifyUnavailable } from "@/lib/notify";
+import { downloadCsv, kurusCell } from "@/lib/csv";
 import type { Unit } from "@/features/catalog/model/unit";
 import { formatKurus } from "@/lib/money";
 import {
   isLowStock,
   stockValue,
   type AdjustStockFormValues,
+  type StockCountLine,
   type StockItem,
   type StockItemFormValues,
 } from "../model/stock-item";
 import {
   adjustStockItem,
+  countStockItems,
   createStockItem,
   deleteStockItem,
   updateStockItem,
 } from "../server/actions";
 import { StockAdjustDialog } from "./stock-adjust-dialog";
+import { StockCountDialog } from "./stock-count-dialog";
 import { StockItemFormDialog } from "./stock-item-form-dialog";
 
 export function StockListScreen({
@@ -39,6 +42,8 @@ export function StockListScreen({
   const dialog = useEntityDialog<StockItem>();
   const [adjusting, setAdjusting] = useState<StockItem | null>(null);
   const [adjustSession, setAdjustSession] = useState(0);
+  const [isCounting, setIsCounting] = useState(false);
+  const [countSession, setCountSession] = useState(0);
 
   const handleSave = async (values: StockItemFormValues) => {
     if (dialog.editing) {
@@ -58,6 +63,12 @@ export function StockListScreen({
     setAdjusting(null);
   };
 
+  const handleCount = async (lines: StockCountLine[]) => {
+    await countStockItems(lines);
+    toast.success(`${lines.length} stok kartı sayıma göre güncellendi`);
+    setIsCounting(false);
+  };
+
   const handleDelete = (item: StockItem) => {
     deleteStockItem(item.id)
       .then(() => toast.success("Stok kartı silindi"))
@@ -67,6 +78,20 @@ export function StockListScreen({
         ),
       );
   };
+
+  const handleExport = () =>
+    downloadCsv(
+      "stok-listesi.csv",
+      ["Stok Kartı", "Mevcut Stok", "Birim", "Birim Maliyet", "Stok Değeri", "Kritik Seviye"],
+      stockItems.map((item) => [
+        item.name,
+        item.quantity,
+        item.unitName,
+        item.unitCost !== undefined ? kurusCell(item.unitCost) : "",
+        item.unitCost !== undefined ? kurusCell(stockValue(item)) : "",
+        item.criticalLevel,
+      ]),
+    );
 
   const columns: readonly DataTableColumn<StockItem>[] = [
     {
@@ -152,7 +177,7 @@ export function StockListScreen({
               <Button
                 variant="ghost"
                 className="text-primary"
-                onClick={notifyUnavailable}
+                onClick={handleExport}
               >
                 <Download />
                 İndir
@@ -160,7 +185,10 @@ export function StockListScreen({
               <Button
                 variant="ghost"
                 className="text-primary"
-                onClick={notifyUnavailable}
+                onClick={() => {
+                  setCountSession((session) => session + 1);
+                  setIsCounting(true);
+                }}
               >
                 <ClipboardList />
                 Stok Sayımı
@@ -190,6 +218,13 @@ export function StockListScreen({
         units={units}
         onOpenChange={dialog.onOpenChange}
         onSave={handleSave}
+      />
+      <StockCountDialog
+        key={`count-${countSession}`}
+        open={isCounting}
+        items={stockItems}
+        onOpenChange={setIsCounting}
+        onSave={handleCount}
       />
       <StockAdjustDialog
         key={`adjust-${adjustSession}`}

@@ -15,6 +15,7 @@ export const ROUTES = {
 
   integrationMenuOperations: "/integration-menu-operations",
   productPairing: "/product-pairing",
+  integrationSettings: "/integration-settings",
 
   tableAreaDefinition: "/table-area-definition",
   productDefinition: "/product-definition",

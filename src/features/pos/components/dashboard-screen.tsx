@@ -10,6 +10,8 @@ import { formatKurus } from "@/lib/money";
 import { openOrderTotal } from "../model/pos-state";
 import type { DaySummary } from "../model/stats";
 import { openBillCount, tableOccupancy } from "../model/stats";
+import { useHasApp } from "@/features/entitlements/components/active-apps-provider";
+import { APP_KEYS } from "@/features/entitlements/model/app-keys";
 import { usePosState } from "../store/pos-provider";
 import { HourlySalesChart } from "./hourly-sales-chart";
 import { OccupancyCard } from "./occupancy-card";
@@ -27,6 +29,8 @@ const NO_FOOTER = <span className="invisible">-</span>;
  */
 export function DashboardScreen({ day }: { day: DaySummary }) {
   const state = usePosState();
+  // Cost and profit come from recipes and unit costs: they belong to "Reçete & Maliyet Takibi".
+  const hasRecipeApp = useHasApp([APP_KEYS.recipeCost]);
   const openBills = openBillCount(state);
   const grossProfit = day.salesTotal - day.costOfGoods;
 
@@ -78,41 +82,43 @@ export function DashboardScreen({ day }: { day: DaySummary }) {
         </div>
       </section>
 
-      <section aria-labelledby="profitability-heading">
-        <h2 id="profitability-heading" className="mb-8 text-[13px] font-bold tracking-wider text-muted-foreground uppercase">
-          Finansal Analiz &amp; Kârlılık
-        </h2>
-        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            icon={LayoutGrid}
-            iconClassName="bg-purple-50 text-purple-600"
-            label="Toplam Stok Maliyeti"
-            value={formatKurus(day.stockValue)}
-            footer="Depodaki Ürün Maliyeti"
-          />
-          <StatCard
-            icon={Receipt}
-            iconClassName="bg-indigo-50 text-indigo-600"
-            label="Satılan Ürün Maliyeti"
-            value={formatKurus(day.costOfGoods)}
-            footer="Gerçek Satış Maliyeti"
-          />
-          <StatCard
-            icon={TrendingUp}
-            iconClassName="bg-teal-50 text-teal-600"
-            label="Brüt Kâr"
-            value={formatKurus(grossProfit)}
-            footer="Ciro - Satılan Ürün Maliyeti"
-          />
-          <StatCard
-            icon={Wallet}
-            iconClassName="bg-cyan-50 text-cyan-600"
-            label="Net Kâr"
-            value={formatKurus(grossProfit - day.expenseTotal - day.wastageTotal)}
-            footer="Brüt Kâr - Gider - Zayi"
-          />
-        </div>
-      </section>
+      {hasRecipeApp && (
+        <section aria-labelledby="profitability-heading">
+          <h2 id="profitability-heading" className="mb-8 text-[13px] font-bold tracking-wider text-muted-foreground uppercase">
+            Finansal Analiz &amp; Kârlılık
+          </h2>
+          <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              icon={LayoutGrid}
+              iconClassName="bg-purple-50 text-purple-600"
+              label="Toplam Stok Maliyeti"
+              value={formatKurus(day.stockValue)}
+              footer="Depodaki Ürün Maliyeti"
+            />
+            <StatCard
+              icon={Receipt}
+              iconClassName="bg-indigo-50 text-indigo-600"
+              label="Satılan Ürün Maliyeti"
+              value={formatKurus(day.costOfGoods)}
+              footer="Gerçek Satış Maliyeti"
+            />
+            <StatCard
+              icon={TrendingUp}
+              iconClassName="bg-teal-50 text-teal-600"
+              label="Brüt Kâr"
+              value={formatKurus(grossProfit)}
+              footer="Ciro - Satılan Ürün Maliyeti"
+            />
+            <StatCard
+              icon={Wallet}
+              iconClassName="bg-cyan-50 text-cyan-600"
+              label="Net Kâr"
+              value={formatKurus(grossProfit - day.expenseTotal - day.wastageTotal)}
+              footer="Brüt Kâr - Gider - Zayi"
+            />
+          </div>
+        </section>
+      )}
 
       <Panel title="Günlük Satış Miktarları" aside="Tutar (₺)">
         <HourlySalesChart hours={day.byHour} peakHour={day.peakHour} />
